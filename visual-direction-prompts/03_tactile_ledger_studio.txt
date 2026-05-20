@@ -1,0 +1,31 @@
+Create one high-resolution product concept board for a bilingual personal finance app called MoneyTrack.
+
+Format:
+- One single image, 16:9 landscape.
+- Six screenshots arranged in a precise 2x3 grid.
+- Show a consistent design system across desktop and mobile.
+- Screens should appear as app UI screenshots with minimal device framing.
+
+Screens to include:
+1. Desktop dashboard with balance, accounts, goal progress, debts, installments, and reminders.
+2. Mobile Arabic RTL home screen.
+3. New entry form for transaction, debt, or installment.
+4. Goal detail screen with contribution plan and target date.
+5. Debt and installment timeline with paid/upcoming states.
+6. Settings screen with profile, language switch, theme, currency SAR, and backup/sync status.
+
+Visual direction:
+Tactile ledger studio. Blend the discipline of a personal accounting notebook with modern app polish. The UI should feel physical, organized, and handcrafted: soft off-white canvas, ink-black text, sage and muted blue accents, thin ruled lines, tabbed sections, ledger rows, lightly embossed surfaces, small stamps/status marks, and carefully spaced forms. It should not look old-fashioned; it should look like a premium digital notebook for money clarity.
+
+UX and content requirements:
+- Personal finance focus: manual entries, assets, expenses, debts, installments, savings goals, and in-app reminders.
+- Include English and Arabic, with at least one RTL Arabic screen.
+- Currency is SAR.
+- Use readable row layouts, editable fields, goal progress, and due-date indicators.
+- Make the interface feel calm, useful, and personal.
+
+Motion implication:
+Imply motion with tab transitions, expanding ledger rows, animated checkmarks for paid obligations, and a smooth add-entry drawer.
+
+Avoid:
+- Scrapbook clutter, fake handwritten illegibility, excessive beige monotone, old paper gimmicks, random stickers, generic finance cards, crypto charts, neon gradients, and decorative objects that are not part of the UI.

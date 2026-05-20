@@ -1,0 +1,30 @@
+Create one high-resolution product concept board for a bilingual personal finance app called MoneyTrack.
+
+Format:
+- One single image, 16:9 landscape.
+- A 2x3 grid of six app screenshots on a neutral gallery background.
+- Include both desktop web and Android mobile views.
+- Each screenshot must look like a real product screen, not a poster.
+
+Screens to include:
+1. Desktop financial command center: accounts, available money, goals, debts, installment obligations, reminders, and a compact chart.
+2. Arabic RTL mobile dashboard.
+3. Add expense / income / debt form.
+4. Goal planning screen for saving toward a purchase.
+5. Obligations timeline with installment cards and due reminders.
+6. Account/settings screen with language toggle, SAR currency, profile, and sign out.
+
+Visual direction:
+Modern Saudi minimalism. Use a crisp, contemporary interface inspired by Riyadh financial tech and high-end civic service apps, without using flags, landmarks, cliches, or ornamental stereotypes. Palette: warm white, blackened green, date-palm green, sand-gray neutrals, graphite text, and measured teal accents. Use large clean numerals, Arabic-friendly typography, generous whitespace, and structured grid alignment. Design should feel local, mature, and trustworthy, with subtle geometric rhythm and strong RTL/LTR discipline.
+
+UX and content requirements:
+- Bilingual EN/AR support must be visible as a true layout switch, not just translated labels.
+- Show SAR currency, personal obligations, debts, goals, and reminders.
+- Make the screens dense enough for daily use but calm enough for mobile.
+- Prioritize touch-friendly controls, strong contrast, and quick scanning.
+
+Motion implication:
+Show hints of polished mobile transitions: bottom sheets, sliding segmented controls, progress rings, and timeline expansion states.
+
+Avoid:
+- Tourist-style Middle East visuals, excessive beige, generic bank app templates, AI-generated fake Arabic gibberish, glowing gradient backgrounds, glass cards everywhere, stock-market dashboards, and decorative icons with no function.

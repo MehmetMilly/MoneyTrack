@@ -1,0 +1,31 @@
+Create one high-resolution product concept board for a bilingual personal finance app called MoneyTrack.
+
+Format:
+- One single image, 16:9 landscape.
+- Six screenshots in a 2x3 grid, with the same app rendered in different product areas.
+- Include one desktop command-center screenshot and several Android mobile screenshots.
+- The screenshots should be readable and buildable, not abstract concept art.
+
+Screens to include:
+1. Desktop command center: available money, debts, installments, savings goals, reminders, and analytics.
+2. Mobile dashboard in Arabic RTL.
+3. Add transaction / debt / installment bottom sheet.
+4. Goal detail screen with progress, remaining amount, and contribution plan.
+5. Reminder timeline for obligations and recurring installments.
+6. Settings/profile screen with EN/AR switch, SAR currency, sync status, and auth controls.
+
+Visual direction:
+Cinematic dark command center. Create a premium dark UI that feels focused, fluid, and technical without becoming cyberpunk. Palette: deep black-green, blue-black, soft white text, desaturated mint, amber warning states, and restrained electric cyan only for active focus. Use depth through layered panels, light grazing edges, radial focus gradients, and crisp data visualization. The app should feel like a private cockpit for personal money decisions, with excellent readability and mobile ergonomics.
+
+UX and content requirements:
+- Show actual personal finance workflows, not stock trading.
+- Include bilingual EN/AR support with one full Arabic RTL screen.
+- Currency is SAR.
+- Make important states obvious: fully funded, amount needed, paid, upcoming, overdue, synced offline.
+- Controls must look touch-ready and production-grade.
+
+Motion implication:
+Suggest fluid transitions with active cards lifting, glowing focus rings only where useful, animated progress paths, and a timeline sliding between upcoming and paid states.
+
+Avoid:
+- Overdone glassmorphism, sci-fi holograms, random neon, crypto exchange aesthetics, dense trading terminals, purple-blue gradients, blurred blob backgrounds, fake AI assistant panels, and unreadable microtext.
