@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+.env.local
+.env.*.local
+.codex-video-frames
+tts-output
+generated-visual-directions
+visual-direction-prompts
+frontend_rework_prompt.md
+MoneyTrack.html
