@@ -1,0 +1,24 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.stamp {
+  transform: rotate(-3deg);
+  border-width: 2px;
+  border-style: solid;
+}
+
+.paid { background: var(--color-success-bg); color: var(--color-success); border-color: var(--color-success); }
+.overdue { background: var(--color-danger-bg); color: var(--color-danger); border-color: var(--color-danger); }
+.due_soon { background: var(--color-warning-bg); color: var(--color-warning); border-color: var(--color-warning); }
+.upcoming { background: var(--color-info-bg); color: var(--color-info); border-color: var(--color-info); }
+.active { background: var(--color-accent-subtle); color: var(--color-accent); border-color: var(--color-accent); }

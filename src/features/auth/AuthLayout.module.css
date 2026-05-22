@@ -1,0 +1,111 @@
+.layout {
+  display: flex;
+  min-height: 100dvh;
+  position: relative;
+}
+
+.langToggle {
+  position: fixed;
+  top: var(--space-4);
+  inset-inline-end: var(--space-4);
+  z-index: 10;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+.langToggle:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Branding */
+.branding {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+}
+
+.brandContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.ruledLines {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-10) var(--space-6);
+  opacity: 0.3;
+}
+
+.ruleLine {
+  height: 1px;
+  background: var(--color-border);
+  width: 100%;
+}
+
+.brandText {
+  position: relative;
+}
+
+.logoMark {
+  font-size: var(--text-3xl);
+  color: var(--color-accent);
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+.logoTitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-4xl);
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: var(--tracking-tight);
+}
+
+.tagline {
+  font-size: var(--text-md);
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-3);
+}
+
+/* Form side */
+.formSide {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: var(--color-bg-primary);
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 400px;
+  animation: slideUp var(--duration-normal) var(--ease-out) both;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 768px) {
+  .layout { flex-direction: column; }
+  .branding { min-height: 180px; flex: none; }
+  .brandContent { padding: var(--space-6); }
+  .logoTitle { font-size: var(--text-2xl); }
+  .formSide { padding: var(--space-6); }
+}

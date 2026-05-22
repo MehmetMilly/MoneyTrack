@@ -1,0 +1,123 @@
+.page { animation: fadeIn var(--duration-normal) var(--ease-default); display: flex; flex-direction: column; gap: var(--space-5); }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0; }
+.title { font-family: var(--font-display); font-size: var(--text-2xl); margin: 0 0 var(--space-1); }
+.subtitle { font-size: var(--text-sm); color: var(--color-text-tertiary); margin: 0; }
+
+.tabs { display: flex; background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 3px; }
+.tab { flex: 1; padding: var(--space-2) var(--space-3); border: none; background: transparent; border-radius: var(--radius-sm); font-weight: var(--weight-semibold); font-size: var(--text-sm); color: var(--color-text-secondary); cursor: pointer; transition: all var(--duration-fast); font-family: var(--font-body); }
+.tabActive { background: var(--color-bg-card); color: var(--color-accent); box-shadow: var(--shadow-xs); }
+
+.filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.filterPill { padding: var(--space-1) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--text-sm); color: var(--color-text-secondary); background: transparent; cursor: pointer; transition: all var(--duration-fast); font-family: var(--font-body); }
+.filterPill:hover { border-color: var(--color-accent); }
+.filterActive { background: var(--color-accent); color: var(--color-accent-text); border-color: var(--color-accent); }
+
+.list { display: flex; flex-direction: column; }
+
+/* Timeline */
+.timelineRow { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) 0; border-bottom: 1px solid var(--color-rule); position: relative; }
+.timelineRow:last-child { border-bottom: none; }
+.dateCol { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+.dateDay { font-family: var(--font-display); font-size: var(--text-xl); color: var(--color-text-primary); line-height: 1; }
+.dateMonth { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; }
+.timelineInfo { flex: 1; min-width: 0; }
+.timelineName { font-weight: var(--weight-medium); color: var(--color-text-primary); display: block; }
+.timelineType { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: capitalize; }
+.timelineRight { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+.markBtn { position: absolute; inset-inline-end: 0; top: 50%; transform: translateY(-50%); font-size: var(--text-xs); color: var(--color-accent); background: var(--color-accent-subtle); border: none; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); cursor: pointer; opacity: 0; transition: opacity var(--duration-fast); font-family: var(--font-body); }
+.timelineRow:hover .markBtn { opacity: 1; }
+
+/* Debts / Installments */
+.debtRow { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) 0; border-bottom: 1px solid var(--color-rule); }
+.debtRow:last-child { border-bottom: none; }
+.debtTop { display: flex; justify-content: space-between; align-items: flex-start; }
+.debtName { font-weight: var(--weight-semibold); color: var(--color-text-primary); display: block; }
+.debtCreditor { font-size: var(--text-xs); color: var(--color-text-muted); }
+.debtAmounts { display: flex; justify-content: space-between; font-size: var(--text-sm); color: var(--color-text-secondary); }
+.payForm { display: flex; gap: var(--space-2); align-items: center; }
+.payInput { flex: 1; border: none; border-bottom: 1px solid var(--color-border-strong); background: transparent; font-size: var(--text-base); color: var(--color-text-primary); padding: var(--space-2) 0; outline: none; font-family: var(--font-body); }
+.payInput:focus { border-color: var(--color-accent); }
+
+@media (max-width: 768px) { .markBtn { opacity: 1; position: static; transform: none; align-self: flex-end; } }
+
+/* Form styles */
+.formCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+}
+.formTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  margin: 0;
+  color: var(--color-text-primary);
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+.fieldLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  margin-bottom: var(--space-2);
+  display: block;
+}
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.typeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.typeActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.deleteBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  padding: 0 var(--space-2);
+  transition: color var(--duration-fast);
+}
+.deleteBtn:hover {
+  color: var(--color-danger);
+}
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -1,0 +1,114 @@
+/* ============================================
+   MoneyTrack — SegmentedControl Styles
+   Tactile tab switcher with sliding indicator
+   ============================================ */
+
+.container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+.fullWidth .segment {
+  flex: 1;
+}
+
+/* ── Sizes ── */
+.sm {
+  border-radius: var(--radius-xs);
+  padding: 2px;
+}
+
+.sm .segment {
+  height: 28px;
+  font-size: var(--text-xs);
+  padding-inline: var(--space-3);
+}
+
+.md .segment {
+  height: 34px;
+  font-size: var(--text-sm);
+  padding-inline: var(--space-4);
+}
+
+/* ── Sliding Indicator ── */
+.indicator {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 0;
+  height: calc(100% - 6px);
+  background-color: var(--color-bg-card);
+  border-radius: calc(var(--radius-sm) - 2px);
+  box-shadow: var(--shadow-xs), 0 0 0 1px var(--color-border-subtle);
+  transition:
+    transform var(--duration-normal) var(--ease-spring),
+    width var(--duration-normal) var(--ease-spring);
+  z-index: 0;
+}
+
+.sm .indicator {
+  top: 2px;
+  height: calc(100% - 4px);
+  border-radius: calc(var(--radius-xs) - 1px);
+}
+
+/* ── Segment Button ── */
+.segment {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-tertiary);
+  border-radius: calc(var(--radius-sm) - 2px);
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast) var(--ease-default);
+  user-select: none;
+}
+
+.segment:hover:not(.active) {
+  color: var(--color-text-secondary);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.active {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+/* ── Icon ── */
+.segmentIcon {
+  display: flex;
+  align-items: center;
+}
+
+.segmentIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Label ── */
+.segmentLabel {
+  letter-spacing: var(--tracking-wide);
+}

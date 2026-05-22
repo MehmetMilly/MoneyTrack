@@ -1,0 +1,46 @@
+.page { animation: fadeIn var(--duration-normal) var(--ease-default); display: flex; flex-direction: column; gap: var(--space-4); max-width: 560px; margin: 0 auto; }
+.header { display: flex; align-items: center; gap: var(--space-3); }
+.backBtn { background: none; border: none; color: var(--color-text-secondary); cursor: pointer; display: flex; padding: var(--space-2); border-radius: var(--radius-sm); }
+.backBtn:hover { background: var(--color-accent-subtle); }
+.title { font-family: var(--font-display); font-size: var(--text-xl); margin: 0; }
+
+/* Tabs */
+.tabs { display: flex; background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 3px; }
+.tab { flex: 1; padding: var(--space-2) var(--space-3); border: none; background: transparent; border-radius: var(--radius-sm); font-weight: var(--weight-semibold); font-size: var(--text-sm); color: var(--color-text-secondary); cursor: pointer; transition: all var(--duration-fast); font-family: var(--font-body); }
+.tabActive { background: var(--color-bg-card); color: var(--color-accent); box-shadow: var(--shadow-xs); }
+
+/* Amount */
+.amountSection { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-4) 0; }
+.amountInput { border: none; outline: none; background: transparent; font-family: var(--font-display); font-size: var(--text-4xl); color: var(--color-text-primary); text-align: center; width: 100%; max-width: 280px; }
+.amountInput::placeholder { color: var(--color-text-muted); }
+.amountCurrency { font-size: var(--text-sm); color: var(--color-text-muted); font-weight: var(--weight-medium); letter-spacing: var(--tracking-wide); }
+
+/* Fields */
+.fields { display: flex; flex-direction: column; gap: var(--space-5); }
+.field { display: flex; flex-direction: column; gap: var(--space-2); }
+.fieldLabel { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-secondary); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
+
+.select { width: 100%; padding: var(--space-2) var(--space-1); border: none; border-bottom: 1px solid var(--color-border-strong); background: transparent; color: var(--color-text-primary); font-family: var(--font-body); font-size: var(--text-base); outline: none; cursor: pointer; }
+.select:focus { border-color: var(--color-accent); }
+
+/* Category grid */
+.catGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.catBtn { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding: var(--space-3) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: transparent; cursor: pointer; transition: all var(--duration-fast); }
+.catBtn:hover { border-color: var(--color-accent); }
+.catActive { border-color: var(--color-accent); background: var(--color-accent-subtle); }
+.catEmoji { font-size: var(--text-lg); }
+.catName { font-size: var(--text-xs); color: var(--color-text-secondary); }
+
+.textarea { width: 100%; border: none; border-bottom: 1px solid var(--color-border-strong); background: transparent; color: var(--color-text-primary); font-family: var(--font-body); font-size: var(--text-base); padding: var(--space-2) 0; resize: none; outline: none; }
+.textarea:focus { border-color: var(--color-accent); }
+
+/* Toggle */
+.toggleRow { display: flex; align-items: center; justify-content: space-between; font-size: var(--text-base); color: var(--color-text-secondary); }
+.toggle { width: 48px; height: 26px; border-radius: var(--radius-full); border: 1px solid var(--color-border-strong); background: var(--color-bg-tertiary); position: relative; cursor: pointer; transition: all var(--duration-fast); }
+.toggleOn { background: var(--color-accent); border-color: var(--color-accent); }
+.toggleDot { position: absolute; top: 2px; inset-inline-start: 2px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: all var(--duration-fast) var(--ease-spring); }
+.toggleOn .toggleDot { inset-inline-start: 24px; }
+
+.actions { display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-2); }
+
+@media (max-width: 480px) { .catGrid { grid-template-columns: repeat(2, 1fr); } }

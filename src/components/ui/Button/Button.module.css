@@ -1,0 +1,70 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  white-space: nowrap;
+  position: relative;
+  text-decoration: none;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
+/* Sizes */
+.sm { padding: var(--space-1) var(--space-3); font-size: var(--text-sm); min-height: 32px; }
+.md { padding: var(--space-2) var(--space-4); font-size: var(--text-base); min-height: 40px; }
+.lg { padding: var(--space-3) var(--space-6); font-size: var(--text-md); min-height: 48px; }
+
+/* Variants */
+.primary {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+}
+.primary:hover:not(:disabled) { background: var(--color-accent-hover); }
+
+.secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+.secondary:hover:not(:disabled) { background: var(--color-accent-subtle); border-color: var(--color-accent); color: var(--color-accent); }
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.ghost:hover:not(:disabled) { background: var(--color-accent-subtle); color: var(--color-accent); }
+
+.danger {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.danger:hover:not(:disabled) { background: var(--color-danger-bg); }
+
+.full { width: 100%; }
+
+/* Loading */
+.loading { color: transparent; }
+.spinner {
+  position: absolute;
+  width: 18px; height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin var(--duration-slower) linear infinite;
+  color: var(--color-accent-text);
+}
+.primary .spinner { color: var(--color-accent-text); }
+.secondary .spinner, .ghost .spinner { color: var(--color-accent); }
+
+.icon { display: flex; align-items: center; }
+
+@keyframes spin { to { transform: rotate(360deg); } }

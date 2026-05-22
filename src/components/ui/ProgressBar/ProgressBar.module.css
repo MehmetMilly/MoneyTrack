@@ -1,0 +1,21 @@
+.wrapper { display: flex; flex-direction: column; gap: var(--space-1); width: 100%; }
+.meta { display: flex; justify-content: space-between; align-items: center; }
+.label { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.value { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-primary); }
+
+.track {
+  width: 100%;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.sm { height: 4px; }
+.md { height: 6px; }
+.lg { height: 10px; }
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slow) var(--ease-out);
+  min-width: 2px;
+}
