@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from '@phosphor-icons/react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { useAppStore } from '../../lib/data/store';
+import { buildMonthlySnapshot } from '../../lib/data/financialInsights';
 import { formatAmount } from '../../lib/utils/currency';
 import { formatDateShort, getDueStatus } from '../../lib/utils/dates';
 import { Card, AmountDisplay, Badge, ProgressBar, Button, Input } from '../../components/ui';
@@ -16,6 +17,7 @@ export default function ObligationsPage() {
   const debts = useAppStore((s) => s.debts);
   const installments = useAppStore((s) => s.installments);
   const reminders = useAppStore((s) => s.reminders);
+  const transactions = useAppStore((s) => s.transactions);
   
   const markReminderPaid = useAppStore((s) => s.markReminderPaid);
   const addDebtPayment = useAppStore((s) => s.addDebtPayment);
@@ -38,7 +40,27 @@ export default function ObligationsPage() {
   const [payAmount, setPayAmount] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const activeAccountId = selectedAccountId || accounts[0]?.id || '';
-  const curr = language === 'ar' ? 'ر.س' : 'SAR';
+  const curr = 'SAR';
+  const snapshot = buildMonthlySnapshot({ transactions, reminders });
+  const activeDebtLoad = debts
+    .filter((debt) => debt.type === 'owed_by_me' && debt.status !== 'paid')
+    .reduce((sum, debt) => sum + Math.max(0, debt.totalAmount - debt.paidAmount), 0);
+  const installmentMonthlyLoad = installments
+    .filter((installment) => installment.status !== 'completed')
+    .reduce((sum, installment) => sum + installment.monthlyAmount, 0);
+
+  const reminderBadgeLabel = (variant: 'paid' | 'overdue' | 'due_soon' | 'upcoming') => {
+    if (variant === 'paid') return t('obligations.paid');
+    if (variant === 'overdue') return t('obligations.overdue');
+    if (variant === 'due_soon') return t('obligations.dueSoon');
+    return t('obligations.upcoming');
+  };
+
+  const debtBadgeLabel = (status: 'active' | 'paid' | 'overdue') => {
+    if (status === 'paid') return t('debts.paid');
+    if (status === 'overdue') return t('debts.overdue');
+    return t('debts.active');
+  };
 
   // Debt Form State
   const [showDebtForm, setShowDebtForm] = useState(false);
@@ -215,6 +237,21 @@ export default function ObligationsPage() {
       </header>
       {error && <p className={styles.subtitle} style={{ color: 'var(--color-danger)' }}>{error}</p>}
 
+      <section className={styles.summaryStrip}>
+        <div>
+          <span>Due in 14 days</span>
+          <strong>SAR {formatAmount(snapshot.dueSoonTotal, language)}</strong>
+        </div>
+        <div>
+          <span>Open debt load</span>
+          <strong>SAR {formatAmount(activeDebtLoad, language)}</strong>
+        </div>
+        <div>
+          <span>Monthly installments</span>
+          <strong>SAR {formatAmount(installmentMonthlyLoad, language)}</strong>
+        </div>
+      </section>
+
       {/* Tabs */}
       <div className={styles.tabs}>
         {(['timeline', 'debts', 'installments'] as const).map((tb) => (
@@ -240,10 +277,10 @@ export default function ObligationsPage() {
         <Card padding="md" className={`${styles.formCard} slide-up`}>
           <h3 className={styles.formTitle}>{t('debts.addDebt')}</h3>
           <div className={styles.formGrid}>
-            <Input label={t('debts.creditor') || 'Name'} value={debtForm.name} onChange={(e) => setDebtForm({ ...debtForm, name: e.target.value })} placeholder="e.g. Loan from Ali" />
+            <Input label="Debt name" value={debtForm.name} onChange={(e) => setDebtForm({ ...debtForm, name: e.target.value })} placeholder="e.g. Demo Friend Loan" />
             <Input label={t('debts.totalAmount')} type="number" value={debtForm.totalAmount} onChange={(e) => setDebtForm({ ...debtForm, totalAmount: e.target.value })} placeholder="0.00" />
             <Input label={t('debts.dueDate')} type="date" value={debtForm.dueDate} onChange={(e) => setDebtForm({ ...debtForm, dueDate: e.target.value })} />
-            <Input label={t('debts.creditor')} value={debtForm.creditor} onChange={(e) => setDebtForm({ ...debtForm, creditor: e.target.value })} placeholder="e.g. Ali" />
+            <Input label={t('debts.creditor')} value={debtForm.creditor} onChange={(e) => setDebtForm({ ...debtForm, creditor: e.target.value })} placeholder="e.g. Demo Friend" />
             <div>
               <label className={styles.fieldLabel}>{t('debts.status')}</label>
               <div className={styles.typeGrid}>
@@ -269,7 +306,7 @@ export default function ObligationsPage() {
         <Card padding="md" className={`${styles.formCard} slide-up`}>
           <h3 className={styles.formTitle}>{t('installments.addInstallment')}</h3>
           <div className={styles.formGrid}>
-            <Input label={t('installments.provider') || 'Name'} value={installmentForm.name} onChange={(e) => setInstallmentForm({ ...installmentForm, name: e.target.value })} placeholder="e.g. iPhone Installment" />
+            <Input label="Installment name" value={installmentForm.name} onChange={(e) => setInstallmentForm({ ...installmentForm, name: e.target.value })} placeholder="e.g. iPhone Installment" />
             <Input label={t('installments.monthlyAmount')} type="number" value={installmentForm.monthlyAmount} onChange={(e) => setInstallmentForm({ ...installmentForm, monthlyAmount: e.target.value })} placeholder="0.00" />
             <Input label={t('installments.totalAmount')} type="number" value={installmentForm.totalAmount} onChange={(e) => setInstallmentForm({ ...installmentForm, totalAmount: e.target.value })} placeholder="0.00" />
             <Input label={t('installments.remaining')} type="number" value={installmentForm.totalInstallments} onChange={(e) => setInstallmentForm({ ...installmentForm, totalInstallments: e.target.value })} placeholder="e.g. 12" />
@@ -304,7 +341,7 @@ export default function ObligationsPage() {
                   </div>
                   <div className={styles.timelineRight}>
                     <AmountDisplay amount={rem.amount} size="sm" showCurrency />
-                    <Badge variant={badgeVar} stamp>{badgeVar === 'paid' ? (language === 'ar' ? 'مدفوع' : 'Paid') : badgeVar === 'overdue' ? (language === 'ar' ? 'متأخر' : 'Overdue') : badgeVar === 'due_soon' ? (language === 'ar' ? 'قريباً' : 'Soon') : (language === 'ar' ? 'قادم' : 'Upcoming')}</Badge>
+                    <Badge variant={badgeVar} stamp>{reminderBadgeLabel(badgeVar)}</Badge>
                   </div>
                   {rem.status !== 'paid' && (
                     <>
@@ -347,8 +384,8 @@ export default function ObligationsPage() {
                       <span className={styles.debtCreditor}>{debt.creditor}</span>
                     </div>
                     <div className={styles.rowActions}>
-                      <Badge variant={debt.status === 'paid' ? 'paid' : debt.status === 'overdue' ? 'overdue' : 'active'} stamp>{debt.status === 'paid' ? (language === 'ar' ? 'مدفوع' : 'Paid') : debt.status === 'overdue' ? (language === 'ar' ? 'متأخر' : 'Overdue') : (language === 'ar' ? 'نشط' : 'Active')}</Badge>
-                      <button className={styles.deleteBtn} onClick={() => void handleDeleteDebt(debt.id)} title={t('common.delete')}>×</button>
+                      <Badge variant={debt.status === 'paid' ? 'paid' : debt.status === 'overdue' ? 'overdue' : 'active'} stamp>{debtBadgeLabel(debt.status)}</Badge>
+                      <button className={styles.deleteBtn} onClick={() => void handleDeleteDebt(debt.id)} title={t('common.delete')}>x</button>
                     </div>
                   </div>
                   <ProgressBar value={pct} showValue size="sm" />
@@ -398,7 +435,7 @@ export default function ObligationsPage() {
                     </div>
                     <div className={styles.rowActions}>
                       <Badge variant={inst.status === 'completed' ? 'paid' : 'active'} stamp>{inst.status === 'completed' ? t('installments.completed') : `${inst.paidInstallments}/${inst.totalInstallments}`}</Badge>
-                      <button className={styles.deleteBtn} onClick={() => void handleDeleteInstallment(inst.id)} title={t('common.delete')}>×</button>
+                      <button className={styles.deleteBtn} onClick={() => void handleDeleteInstallment(inst.id)} title={t('common.delete')}>x</button>
                     </div>
                   </div>
                   <ProgressBar value={pct} showValue size="sm" label={t('installments.paidCount', { paid: String(inst.paidInstallments), total: String(inst.totalInstallments) })} />

@@ -1,16 +1,9 @@
 import { doc, runTransaction } from 'firebase/firestore';
 import type { Account, Transaction } from '../types';
+import { applyTransactionBalance } from '../financeCalculations';
 import { isoNow, subscribeCollection, todayDate, userCollectionRef, userDocRef } from '../../firebase/firestore';
 
 export type NewTransactionInput = Omit<Transaction, 'id' | 'createdAt'>;
-
-function applyTransactionDelta(account: Account, transaction: NewTransactionInput | Transaction, direction: 1 | -1) {
-  if (transaction.type === 'income') {
-    return account.balance + transaction.amount * direction;
-  }
-
-  return account.balance - transaction.amount * direction;
-}
 
 export function subscribeTransactions(uid: string, callback: (items: Transaction[]) => void, onError: (error: Error) => void) {
   return subscribeCollection<Transaction>(userCollectionRef(uid, 'transactions'), callback, onError);
@@ -64,7 +57,7 @@ export async function createTransactionRecord(uid: string, payload: NewTransacti
       transaction.set(
         sourceRef,
         {
-          balance: applyTransactionDelta(sourceAccount, payload, 1),
+          balance: applyTransactionBalance(sourceAccount, payload, 1),
           updatedAt: today,
         },
         { merge: true }
@@ -128,7 +121,7 @@ export async function deleteTransactionRecord(uid: string, transactionId: string
       transaction.set(
         sourceRef,
         {
-          balance: applyTransactionDelta(sourceAccount, record, -1),
+          balance: applyTransactionBalance(sourceAccount, record, -1),
           updatedAt: today,
         },
         { merge: true }

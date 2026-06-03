@@ -1,7 +1,6 @@
 /* ============================================
-   MoneyTrack — Font System
-   Instrument Serif (display) + DM Sans (body)
-   Noto Naskh Arabic (AR display) + IBM Plex Sans Arabic (AR body)
+   MoneyTrack Font System
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+/* The app intentionally uses the system font stacks declared in tokens.css.
+   Avoid remote font imports so local verification does not depend on Google Fonts. */

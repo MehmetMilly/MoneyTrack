@@ -33,11 +33,22 @@ import {
 import {
   createPlanningEntry,
   deletePlanningEntry as deletePlanningEntryRecord,
-  getPlanningEntryAmount,
   subscribePlanningEntries,
   updatePlanningEntry as updatePlanningEntryRecord,
   type NewPlanningEntryInput,
 } from './repositories/planningEntryRepository';
+import { goalProgressPercent, plannerTotals, remainingDebtAmount } from './financeCalculations';
+import {
+  defaultCategories,
+  demoAccounts,
+  demoDebts,
+  demoGoals,
+  demoInstallments,
+  demoPlanningEntries,
+  demoProfile,
+  demoReminders,
+  demoTransactions,
+} from './demoData';
 import {
   completeGoogleRedirectSignIn,
   getAuthErrorMessage,
@@ -49,6 +60,7 @@ import {
   sendPasswordReset,
   signupWithEmail,
 } from '../firebase/auth';
+import { isFirebaseConfigured } from '../firebase/client';
 import type {
   Account,
   AppSettings,
@@ -65,6 +77,7 @@ import type {
 } from './types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+type SessionMode = 'firebase' | 'demo';
 type OperationArea = 'auth' | 'bootstrap' | 'settings' | 'accounts' | 'transactions' | 'planning' | 'goals' | 'obligations';
 
 interface OperationState {
@@ -96,6 +109,7 @@ interface ReminderPaymentOptions {
 
 interface AppState {
   authStatus: AuthStatus;
+  sessionMode: SessionMode;
   isAuthenticated: boolean;
   currentUserId: string | null;
   profile: UserProfile;
@@ -120,6 +134,7 @@ interface AppState {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  startDemoSession: () => void;
   logout: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
 
@@ -168,6 +183,8 @@ const EMPTY_PROFILE: UserProfile = {
   email: '',
 };
 
+const DEMO_WRITE_MESSAGE = 'The local demo workspace is read-only. Connect Firebase to create, edit, or save finance data.';
+
 const initialLoadingState: OperationState = {
   auth: false,
   bootstrap: false,
@@ -196,6 +213,32 @@ let dataSubscriptions: Array<() => void> = [];
 let authEventVersion = 0;
 let onlineListenerAttached = false;
 let redirectResultHandled = false;
+
+function buildDemoWorkspaceState() {
+  return {
+    sessionMode: 'demo' as const,
+    authStatus: 'authenticated' as const,
+    isAuthenticated: true,
+    currentUserId: 'demo-local',
+    profile: demoProfile,
+    lastSyncedAt: null,
+    accounts: [...demoAccounts],
+    transactions: [...demoTransactions],
+    planningEntries: [...demoPlanningEntries],
+    categories: [...defaultCategories],
+    debts: [...demoDebts],
+    installments: [...demoInstallments],
+    goals: [...demoGoals],
+    reminders: [...demoReminders],
+    settings: {
+      ...DEFAULT_SETTINGS,
+      planner: {
+        ...DEFAULT_SETTINGS.planner,
+        primaryGoalId: demoGoals[0]?.id,
+      },
+    },
+  };
+}
 
 function withMessage(error: unknown) {
   const authMessage = getAuthErrorMessage(error);
@@ -316,6 +359,10 @@ function initializeAuthStateListener() {
   }
 
   authStateUnsubscribe = observeAuthState(async (user) => {
+    if (useAppStore.getState().sessionMode === 'demo') {
+      return;
+    }
+
     const currentVersion = ++authEventVersion;
     patchLoading('bootstrap', true);
     patchError('bootstrap', null);
@@ -327,6 +374,7 @@ function initializeAuthStateListener() {
       }
 
       useAppStore.setState({
+        sessionMode: 'firebase',
         authStatus: 'unauthenticated',
         isAuthenticated: false,
         currentUserId: null,
@@ -350,6 +398,7 @@ function initializeAuthStateListener() {
       const displayName = user.displayName?.trim() || email.split('@')[0] || 'User';
 
       useAppStore.setState({
+        sessionMode: 'firebase',
         authStatus: 'authenticated',
         isAuthenticated: true,
         currentUserId: user.uid,
@@ -390,7 +439,7 @@ function initializeAuthStateListener() {
     void completeGoogleRedirectSignIn().catch((error) => {
       patchError('auth', withMessage(error));
       if (useAppStore.getState().authStatus === 'loading') {
-        useAppStore.setState({ authStatus: 'unauthenticated', isAuthenticated: false, currentUserId: null });
+        useAppStore.setState({ sessionMode: 'firebase', authStatus: 'unauthenticated', isAuthenticated: false, currentUserId: null });
       }
     });
   }
@@ -414,8 +463,18 @@ export const useAppStore = create<AppState>()(
         }
       };
 
+      const requireWritableSession = () => {
+        if (get().sessionMode === 'demo') {
+          throw new Error(DEMO_WRITE_MESSAGE);
+        }
+      };
+
       const persistSettings = async (nextSettings: AppSettings) => {
         set({ settings: nextSettings });
+        if (get().sessionMode === 'demo') {
+          return;
+        }
+
         const uid = get().currentUserId;
         if (!uid) {
           return;
@@ -428,6 +487,7 @@ export const useAppStore = create<AppState>()(
 
       return {
         authStatus: 'loading',
+        sessionMode: 'firebase',
         isAuthenticated: false,
         currentUserId: null,
         profile: EMPTY_PROFILE,
@@ -453,6 +513,10 @@ export const useAppStore = create<AppState>()(
 
           storeInitialized = true;
           attachOnlineListeners();
+          if (!isFirebaseConfigured) {
+            set({ sessionMode: 'firebase', authStatus: 'unauthenticated', isAuthenticated: false, currentUserId: null });
+            return;
+          }
           initializeAuthStateListener();
         },
 
@@ -507,7 +571,39 @@ export const useAppStore = create<AppState>()(
           });
         },
 
+        startDemoSession: () => {
+          detachDataSubscriptions();
+          authEventVersion += 1;
+          set({
+            ...buildDemoWorkspaceState(),
+            loading: initialLoadingState,
+            errors: initialErrorState,
+          });
+        },
+
         logout: async () => {
+          if (get().sessionMode === 'demo') {
+            detachDataSubscriptions();
+            set({
+              sessionMode: 'firebase',
+              authStatus: 'unauthenticated',
+              isAuthenticated: false,
+              currentUserId: null,
+              profile: EMPTY_PROFILE,
+              lastSyncedAt: null,
+              accounts: [],
+              transactions: [],
+              planningEntries: [],
+              categories: [],
+              debts: [],
+              installments: [],
+              goals: [],
+              reminders: [],
+              errors: initialErrorState,
+            });
+            return;
+          }
+
           await runOperation('auth', async () => {
             await logoutUser();
           });
@@ -534,6 +630,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addAccount: async (account) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to add an account.');
@@ -545,6 +642,7 @@ export const useAppStore = create<AppState>()(
         },
 
         updateAccount: async (id, updates) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to update an account.');
@@ -556,6 +654,7 @@ export const useAppStore = create<AppState>()(
         },
 
         deleteAccount: async (id) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to delete an account.');
@@ -567,6 +666,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addTransaction: async (tx) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to create a transaction.');
@@ -578,6 +678,7 @@ export const useAppStore = create<AppState>()(
         },
 
         deleteTransaction: async (id) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to delete a transaction.');
@@ -589,6 +690,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addPlanningEntry: async (entry) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to create a planning entry.');
@@ -600,6 +702,7 @@ export const useAppStore = create<AppState>()(
         },
 
         updatePlanningEntry: async (id, updates) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to update a planning entry.');
@@ -611,6 +714,7 @@ export const useAppStore = create<AppState>()(
         },
 
         deletePlanningEntry: async (id) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to delete a planning entry.');
@@ -622,6 +726,7 @@ export const useAppStore = create<AppState>()(
         },
 
         markPlanningEntryConfirmed: async (entryId, actualAmount) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to confirm a planning entry.');
@@ -636,6 +741,7 @@ export const useAppStore = create<AppState>()(
         },
 
         markPlanningEntryCancelled: async (entryId) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to cancel a planning entry.');
@@ -649,6 +755,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addGoal: async (goal) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to add a goal.');
@@ -660,6 +767,7 @@ export const useAppStore = create<AppState>()(
         },
 
         deleteGoal: async (id) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to delete a goal.');
@@ -671,6 +779,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addDebt: async (debt) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to add a debt.');
@@ -682,6 +791,7 @@ export const useAppStore = create<AppState>()(
         },
 
         deleteDebt: async (id) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to delete a debt.');
@@ -693,6 +803,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addInstallment: async (installment) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to add an installment.');
@@ -704,6 +815,7 @@ export const useAppStore = create<AppState>()(
         },
 
         deleteInstallment: async (id) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to delete an installment.');
@@ -715,6 +827,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addContribution: async (goalId, contribution) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to add a contribution.');
@@ -726,6 +839,7 @@ export const useAppStore = create<AppState>()(
         },
 
         addDebtPayment: async (debtId, payment) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to pay a debt.');
@@ -737,6 +851,7 @@ export const useAppStore = create<AppState>()(
         },
 
         markInstallmentPaid: async (installmentId, payment) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to pay an installment.');
@@ -748,6 +863,7 @@ export const useAppStore = create<AppState>()(
         },
 
         markReminderPaid: async (reminderId, options) => {
+          requireWritableSession();
           const uid = get().currentUserId;
           if (!uid) {
             throw new Error('You must be signed in to mark a reminder as paid.');
@@ -758,12 +874,19 @@ export const useAppStore = create<AppState>()(
           });
         },
 
-        getTotalAssets: () => get().accounts.reduce((sum, account) => sum + account.balance, 0),
+        getTotalAssets: () => {
+          const accountAssets = get().accounts.reduce((sum, account) => sum + account.balance, 0);
+          const receivables = get()
+            .debts.filter((debt) => debt.type === 'owed_to_me' && debt.status !== 'paid')
+            .reduce((sum, debt) => sum + remainingDebtAmount(debt), 0);
+
+          return accountAssets + receivables;
+        },
 
         getTotalDebts: () =>
           get().debts
             .filter((debt) => debt.type === 'owed_by_me' && debt.status !== 'paid')
-            .reduce((sum, debt) => sum + (debt.totalAmount - debt.paidAmount), 0),
+            .reduce((sum, debt) => sum + remainingDebtAmount(debt), 0),
 
         getAvailableMoney: () => get().accounts.reduce((sum, account) => sum + account.balance, 0),
 
@@ -782,24 +905,28 @@ export const useAppStore = create<AppState>()(
         },
 
         getPlannerPositiveTotal: () =>
-          get()
-            .planningEntries.filter((entry) => {
-              if (entry.kind !== 'positive' || entry.status === 'cancelled') return false;
-              if (!get().settings.planner.includeExpectedEntries && entry.status === 'expected') return false;
-              return true;
-            })
-            .reduce((sum, entry) => sum + getPlanningEntryAmount(entry), 0),
+          plannerTotals({
+            accounts: get().accounts,
+            debts: get().debts,
+            planningEntries: get().planningEntries,
+            includeExpectedEntries: get().settings.planner.includeExpectedEntries,
+          }).positive,
 
         getPlannerNegativeTotal: () =>
-          get()
-            .planningEntries.filter((entry) => {
-              if (entry.kind !== 'negative' || entry.status === 'cancelled') return false;
-              if (!get().settings.planner.includeExpectedEntries && entry.status === 'expected') return false;
-              return true;
-            })
-            .reduce((sum, entry) => sum + getPlanningEntryAmount(entry), 0),
+          plannerTotals({
+            accounts: get().accounts,
+            debts: get().debts,
+            planningEntries: get().planningEntries,
+            includeExpectedEntries: get().settings.planner.includeExpectedEntries,
+          }).negative,
 
-        getPlannerNetTotal: () => get().getPlannerPositiveTotal() - get().getPlannerNegativeTotal(),
+        getPlannerNetTotal: () =>
+          plannerTotals({
+            accounts: get().accounts,
+            debts: get().debts,
+            planningEntries: get().planningEntries,
+            includeExpectedEntries: get().settings.planner.includeExpectedEntries,
+          }).net,
 
         getPrimaryGoal: () => {
           const { goals, settings } = get();
@@ -817,7 +944,7 @@ export const useAppStore = create<AppState>()(
               ? goal.currentAmount
               : get().getPlannerNetTotal();
 
-          return Math.max(0, Math.min(100, Math.round((progressAmount / goal.targetAmount) * 100)));
+          return goalProgressPercent({ goal, progressAmount });
         },
 
         getPrimaryGoalRemaining: () => {
@@ -847,10 +974,16 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: 'moneytrack-ui-settings',
-      version: 3,
+      version: 4,
       partialize: (state) => ({
         settings: state.settings,
+        sessionMode: state.sessionMode,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.sessionMode === 'demo') {
+          state.startDemoSession();
+        }
+      },
     }
   )
 );

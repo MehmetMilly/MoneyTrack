@@ -1,19 +1,27 @@
+import type { ReactNode } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
-import AuthLayout from '../features/auth/AuthLayout';
-import LoginPage from '../features/auth/LoginPage';
-import SignupPage from '../features/auth/SignupPage';
-import ForgotPasswordPage from '../features/auth/ForgotPasswordPage';
-import AppLayout from './layouts/AppLayout';
-import DashboardPage from '../features/dashboard/DashboardPage';
-import AccountsPage from '../features/accounts/AccountsPage';
-import EntriesPage from '../features/entries/EntriesPage';
-import NewEntryForm from '../features/entries/NewEntryForm';
-import GoalsPage from '../features/goals/GoalsPage';
-import GoalDetailPage from '../features/goals/GoalDetailPage';
-import ObligationsPage from '../features/obligations/ObligationsPage';
-import InsightsPage from '../features/insights/InsightsPage';
-import SettingsPage from '../features/settings/SettingsPage';
 import { ProtectedRoute, PublicOnlyRoute, RootRedirect } from './RouteGuards';
+import { RouteSuspense } from './RouteSuspense';
+import {
+  AccountsPage,
+  AppLayout,
+  AuthLayout,
+  DashboardPage,
+  EntriesPage,
+  ForgotPasswordPage,
+  GoalDetailPage,
+  GoalsPage,
+  InsightsPage,
+  LoginPage,
+  NewEntryForm,
+  ObligationsPage,
+  SettingsPage,
+  SignupPage,
+} from './routeComponents';
+
+function routeElement(element: ReactNode) {
+  return <RouteSuspense>{element}</RouteSuspense>;
+}
 
 export const router = createBrowserRouter([
   {
@@ -24,33 +32,33 @@ export const router = createBrowserRouter([
   {
     element: (
       <PublicOnlyRoute>
-        <AuthLayout />
+        {routeElement(<AuthLayout />)}
       </PublicOnlyRoute>
     ),
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/signup', element: <SignupPage /> },
-      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/login', element: routeElement(<LoginPage />) },
+      { path: '/signup', element: routeElement(<SignupPage />) },
+      { path: '/forgot-password', element: routeElement(<ForgotPasswordPage />) },
     ],
   },
   // App routes
   {
     element: (
       <ProtectedRoute>
-        <AppLayout />
+        {routeElement(<AppLayout />)}
       </ProtectedRoute>
     ),
     children: [
-      { path: '/dashboard', element: <DashboardPage /> },
-      { path: '/accounts', element: <AccountsPage /> },
-      { path: '/transactions', element: <EntriesPage /> },
-      { path: '/transactions/new', element: <NewEntryForm /> },
-      { path: '/goals', element: <GoalsPage /> },
-      { path: '/goals/:id', element: <GoalDetailPage /> },
-      { path: '/obligations', element: <ObligationsPage /> },
-      { path: '/reminders', element: <ObligationsPage /> },
-      { path: '/insights', element: <InsightsPage /> },
-      { path: '/settings', element: <SettingsPage /> },
+      { path: '/dashboard', element: routeElement(<DashboardPage />) },
+      { path: '/accounts', element: routeElement(<AccountsPage />) },
+      { path: '/transactions', element: routeElement(<EntriesPage />) },
+      { path: '/transactions/new', element: routeElement(<NewEntryForm />) },
+      { path: '/goals', element: routeElement(<GoalsPage />) },
+      { path: '/goals/:id', element: routeElement(<GoalDetailPage />) },
+      { path: '/obligations', element: routeElement(<ObligationsPage />) },
+      { path: '/reminders', element: routeElement(<ObligationsPage />) },
+      { path: '/insights', element: routeElement(<InsightsPage />) },
+      { path: '/settings', element: routeElement(<SettingsPage />) },
     ],
   },
 ]);

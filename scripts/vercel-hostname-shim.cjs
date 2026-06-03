@@ -1,6 +1,6 @@
 const os = require("node:os");
 
-const safeHostname = "mehme";
+const safeHostname = "CodexHost";
 
 try {
   os.hostname = () => safeHostname;

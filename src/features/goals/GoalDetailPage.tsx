@@ -29,7 +29,7 @@ export default function GoalDetailPage() {
 
   const pct = Math.round((goal.currentAmount / goal.targetAmount) * 100);
   const remaining = goal.targetAmount - goal.currentAmount;
-  const curr = language === 'ar' ? 'ر.س' : 'SAR';
+  const curr = 'SAR';
 
   const handleAdd = async () => {
     if (!contribAmount) return;

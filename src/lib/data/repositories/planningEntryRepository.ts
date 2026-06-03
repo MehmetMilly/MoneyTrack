@@ -1,19 +1,12 @@
 import { deleteDoc, doc, setDoc } from 'firebase/firestore';
 import type { PlanningEntry } from '../types';
+import { planningEntryAmount } from '../financeCalculations';
 import { isoNow, subscribeCollection, userCollectionRef, userDocRef } from '../../firebase/firestore';
 
 export type NewPlanningEntryInput = Omit<PlanningEntry, 'id' | 'createdAt' | 'updatedAt'>;
 
 export function getPlanningEntryAmount(entry: PlanningEntry) {
-  if (entry.status === 'cancelled') {
-    return 0;
-  }
-
-  if (entry.status === 'confirmed' && typeof entry.actualAmount === 'number') {
-    return entry.actualAmount;
-  }
-
-  return entry.expectedAmount;
+  return planningEntryAmount(entry);
 }
 
 export function subscribePlanningEntries(

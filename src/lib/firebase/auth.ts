@@ -11,7 +11,7 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { auth, googleProvider } from './client';
+import { auth, firebaseConfigMissingMessage, googleProvider, isFirebaseConfigured } from './client';
 
 export interface SignupPayload {
   name: string;
@@ -19,7 +19,14 @@ export interface SignupPayload {
   password: string;
 }
 
+function assertFirebaseConfigured() {
+  if (!isFirebaseConfigured) {
+    throw new Error(firebaseConfigMissingMessage);
+  }
+}
+
 export async function loginWithEmail(email: string, password: string) {
+  assertFirebaseConfigured();
   return signInWithEmailAndPassword(auth, email, password);
 }
 
@@ -56,6 +63,7 @@ function isNetworkRequestFailure(error: unknown) {
 }
 
 export async function signupWithEmail({ name, email, password }: SignupPayload) {
+  assertFirebaseConfigured();
   let credential;
 
   try {
@@ -76,6 +84,7 @@ export async function signupWithEmail({ name, email, password }: SignupPayload) 
 }
 
 export async function loginWithGoogle() {
+  assertFirebaseConfigured();
   try {
     return await signInWithPopup(auth, googleProvider);
   } catch (error) {
@@ -94,22 +103,34 @@ export async function loginWithGoogle() {
 }
 
 export async function completeGoogleRedirectSignIn() {
+  if (!isFirebaseConfigured) {
+    return null;
+  }
   return getRedirectResult(auth);
 }
 
 export async function logoutUser() {
+  if (!isFirebaseConfigured) {
+    return;
+  }
   await signOut(auth);
 }
 
 export async function sendPasswordReset(email: string) {
+  assertFirebaseConfigured();
   await sendPasswordResetEmail(auth, email);
 }
 
 export function observeAuthState(callback: (user: User | null) => void) {
+  if (!isFirebaseConfigured) {
+    callback(null);
+    return () => undefined;
+  }
   return onAuthStateChanged(auth, callback);
 }
 
 export async function getExistingSignInMethods(email: string) {
+  assertFirebaseConfigured();
   return fetchSignInMethodsForEmail(auth, email);
 }
 
@@ -137,7 +158,7 @@ export function getAuthErrorMessage(error: unknown): string {
     case 'auth/network-request-failed':
       return 'MoneyTrack could not reach Firebase Auth. Please check your connection and try again.';
     case 'auth/unauthorized-domain':
-      return 'Google sign-in is not enabled for this domain yet. Add moneytrack-vert.vercel.app to Firebase Authentication authorized domains.';
+      return 'Google sign-in is not enabled for this domain yet. Add the current local or deployed hostname to Firebase Authentication authorized domains.';
     case 'auth/popup-closed-by-user':
       return 'Google sign-in was closed before it finished.';
     case 'auth/popup-blocked':

@@ -78,7 +78,7 @@ export default function AccountsPage() {
         <Card padding="md" className={`${styles.formCard} slide-up`}>
           <h3 className={styles.formTitle}>{t('accounts.addAccount')}</h3>
           <div className={styles.formGrid}>
-            <Input label={t('accounts.accountName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Al Rajhi Bank" />
+            <Input label={t('accounts.accountName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Demo Checking" />
             <Input label={t('accounts.initialBalance')} type="number" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} placeholder="0.00" />
             <div>
               <label className={styles.fieldLabel}>{t('accounts.type')}</label>
@@ -117,6 +117,7 @@ export default function AccountsPage() {
               <div key={acc.id} className={`${styles.row} slide-up stagger-${i + 1}`}>
                 <div className={styles.rowIcon} style={{ backgroundColor: acc.color }}>{typeIcons[acc.type]}</div>
                 <div className={styles.rowInfo}>
+                  <span className={styles.rowName}>{acc.name}</span>
                   <span className={styles.rowType}>{t(`accounts.${acc.type}` as TranslationKey)}</span>
                 </div>
                 <AmountDisplay amount={acc.balance} size="md" showCurrency />

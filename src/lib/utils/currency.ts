@@ -19,7 +19,7 @@ const SAR_COMPACT = new Intl.NumberFormat('en-SA', {
 
 /**
  * Format a number as SAR currency.
- * Returns "12,540.75" (without the SAR prefix — we show that separately)
+ * Returns "12,540.75" without the SAR prefix.
  */
 export function formatAmount(amount: number, locale: 'en' | 'ar' = 'en'): string {
   const formatter = locale === 'ar' ? SAR_FORMATTER_AR : SAR_FORMATTER;
@@ -32,7 +32,7 @@ export function formatAmount(amount: number, locale: 'en' | 'ar' = 'en'): string
 export function formatSAR(amount: number, locale: 'en' | 'ar' = 'en'): string {
   const formatted = formatAmount(amount, locale);
   if (locale === 'ar') {
-    return `${formatted} ر.س`;
+    return `${formatted} SAR`;
   }
   return `SAR ${formatted}`;
 }
@@ -61,8 +61,8 @@ export function splitAmount(amount: number): { whole: string; decimal: string } 
  */
 export function getAmountSign(amount: number, type?: 'income' | 'expense'): string {
   if (type === 'income') return '+';
-  if (type === 'expense') return '−';
-  return amount >= 0 ? '+' : '−';
+  if (type === 'expense') return '-';
+  return amount >= 0 ? '+' : '-';
 }
 
 /**

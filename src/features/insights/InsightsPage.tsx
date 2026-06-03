@@ -1,7 +1,16 @@
+import { Brain, ClockCountdown, TrendDown, TrendUp } from '@phosphor-icons/react';
+import { useMemo } from 'react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { useAppStore } from '../../lib/data/store';
+import {
+  buildCategorySpendingInsights,
+  buildFinancialRecommendations,
+  buildGoalForecast,
+  buildMonthlySnapshot,
+} from '../../lib/data/financialInsights';
 import { formatAmount } from '../../lib/utils/currency';
-import { Card, AmountDisplay, ProgressBar } from '../../components/ui';
+import { formatDateShort } from '../../lib/utils/dates';
+import { Card, AmountDisplay, ProgressBar, EmptyState } from '../../components/ui';
 import styles from './InsightsPage.module.css';
 
 export default function InsightsPage() {
@@ -10,102 +19,137 @@ export default function InsightsPage() {
   const categories = useAppStore((s) => s.categories);
   const goals = useAppStore((s) => s.goals);
   const reminders = useAppStore((s) => s.reminders);
-  const getMonthlyIncome = useAppStore((s) => s.getMonthlyIncome);
-  const getMonthlyExpenses = useAppStore((s) => s.getMonthlyExpenses);
 
-  const income = getMonthlyIncome();
-  const expenses = getMonthlyExpenses();
-  const net = income - expenses;
-  const curr = 'SAR';
-  const thisMonth = new Date().toISOString().slice(0, 7);
-
-  const monthExpenses = transactions.filter((transaction) => transaction.type === 'expense' && transaction.date.startsWith(thisMonth));
-  const categoryTotals = new Map<string, number>();
-  monthExpenses.forEach((transaction) => {
-    categoryTotals.set(transaction.categoryId, (categoryTotals.get(transaction.categoryId) || 0) + transaction.amount);
-  });
-
-  const topCategories = [...categoryTotals.entries()]
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 5)
-    .map(([id, amount]) => ({ category: categories.find((entry) => entry.id === id), amount }));
-  const maxCategoryAmount = topCategories[0]?.amount || 1;
-
-  const monthlyBurden = reminders
-    .filter((reminder) => reminder.status !== 'paid' && reminder.dueDate.startsWith(thisMonth))
-    .reduce((sum, reminder) => sum + reminder.amount, 0);
-  const burdenPct = income > 0 ? Math.round((monthlyBurden / income) * 100) : 0;
+  const snapshot = useMemo(() => buildMonthlySnapshot({ transactions, reminders }), [transactions, reminders]);
+  const categoryInsights = useMemo(
+    () => buildCategorySpendingInsights({ transactions, categories }).slice(0, 5),
+    [transactions, categories]
+  );
+  const goalForecasts = useMemo(() => goals.map((goal) => buildGoalForecast(goal)), [goals]);
+  const recommendations = useMemo(
+    () => buildFinancialRecommendations({ snapshot, categoryInsights, goals: goalForecasts }),
+    [snapshot, categoryInsights, goalForecasts]
+  );
+  const upcomingReminders = reminders
+    .filter((reminder) => reminder.status !== 'paid')
+    .sort((left, right) => left.dueDate.localeCompare(right.dueDate))
+    .slice(0, 4);
 
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>{t('insights.title')}</h1>
       <p className={styles.subtitle}>{t('insights.subtitle')}</p>
 
-      <Card header={t('insights.monthlyCashFlow')}>
-        <div className={styles.cashFlow}>
-          <div className={`${styles.cashCard} ${styles.incomeCard}`}>
-            <span className={styles.cashLabel}>{t('insights.totalIncome')}</span>
-            <AmountDisplay amount={income} size="md" sign="+" showCurrency />
+      <section className={styles.heroGrid}>
+        <Card header={t('insights.monthlyCashFlow')}>
+          <div className={styles.cashFlow}>
+            <div className={`${styles.cashCard} ${styles.incomeCard}`}>
+              <span className={styles.cashLabel}>{t('insights.totalIncome')}</span>
+              <AmountDisplay amount={snapshot.income} size="md" sign="+" showCurrency />
+            </div>
+            <div className={`${styles.cashCard} ${styles.expenseCard}`}>
+              <span className={styles.cashLabel}>{t('insights.totalExpenses')}</span>
+              <AmountDisplay amount={snapshot.expenses} size="md" sign="-" showCurrency />
+            </div>
+            <div className={`${styles.cashCard} ${styles.netCard}`}>
+              <span className={styles.cashLabel}>{t('insights.netSavings')}</span>
+              <AmountDisplay amount={Math.abs(snapshot.net)} size="md" sign={snapshot.net >= 0 ? '+' : '-'} showCurrency />
+            </div>
           </div>
-          <div className={`${styles.cashCard} ${styles.expenseCard}`}>
-            <span className={styles.cashLabel}>{t('insights.totalExpenses')}</span>
-            <AmountDisplay amount={expenses} size="md" sign="-" showCurrency />
+          <div className={styles.flowFoot}>
+            <span>{snapshot.savingsRate}% savings rate</span>
+            <span className={snapshot.netDelta >= 0 ? styles.goodDelta : styles.badDelta}>
+              {snapshot.netDelta >= 0 ? <TrendUp size={14} /> : <TrendDown size={14} />}
+              {snapshot.netDelta >= 0 ? 'SAR ' : '-SAR '}
+              {formatAmount(Math.abs(snapshot.netDelta), language)} vs last month
+            </span>
           </div>
-          <div className={`${styles.cashCard} ${styles.netCard}`}>
-            <span className={styles.cashLabel}>{t('insights.netSavings')}</span>
-            <AmountDisplay amount={Math.abs(net)} size="md" sign={net >= 0 ? '+' : '-'} showCurrency />
-          </div>
-        </div>
-        <div className={styles.flowBar}>
-          <div className={styles.flowIncome} style={{ width: `${income > 0 ? 100 : 0}%` }} />
-          <div className={styles.flowExpense} style={{ width: `${income > 0 ? (expenses / income) * 100 : 0}%` }} />
-        </div>
-      </Card>
+        </Card>
 
-      <Card header={t('insights.categorySpending')}>
-        <div className={styles.catList}>
-          {topCategories.map(({ category, amount }) => (
-            <div key={category?.id || 'unknown'} className={styles.catRow}>
-              <span className={styles.catEmoji}>{category?.icon || 'Other'}</span>
-              <span className={styles.catName}>{language === 'ar' ? category?.nameAr : category?.name}</span>
-              <div className={styles.catBar}>
-                <div className={styles.catFill} style={{ width: `${(amount / maxCategoryAmount) * 100}%`, backgroundColor: category?.color }} />
+        <Card header="What should I do next?">
+          <div className={styles.recommendationList}>
+            {recommendations.map((recommendation) => (
+              <article key={recommendation.id} className={`${styles.recommendationRow} ${styles[recommendation.tone]}`}>
+                <div className={styles.recommendationIcon}>
+                  {recommendation.kind === 'cashflow' ? <Brain size={18} /> : recommendation.kind === 'obligation' ? <ClockCountdown size={18} /> : <TrendUp size={18} />}
+                </div>
+                <div>
+                  <h3>{recommendation.title}</h3>
+                  <p>{recommendation.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Card>
+      </section>
+
+      <div className={styles.analysisGrid}>
+        <Card header={t('insights.categorySpending')}>
+          <div className={styles.catList}>
+            {categoryInsights.length === 0 ? (
+              <EmptyState title="No expense categories yet" description="Track a few expenses to see where the month is leaning." />
+            ) : categoryInsights.map((category) => (
+              <div key={category.categoryId} className={styles.catRow}>
+                <span className={styles.catEmoji}>{category.icon}</span>
+                <div className={styles.catMeta}>
+                  <span className={styles.catName}>{category.categoryName}</span>
+                  <span className={styles.catSubtext}>
+                    {Math.round(category.shareOfExpenses * 100)}% of expenses
+                    {category.deltaAmount !== 0 ? ` | ${category.deltaAmount > 0 ? '+' : '-'}SAR ${formatAmount(Math.abs(category.deltaAmount), language)} vs last month` : ''}
+                  </span>
+                </div>
+                <div className={styles.catBar}>
+                  <div className={styles.catFill} style={{ width: `${Math.round(category.shareOfExpenses * 100)}%`, backgroundColor: category.color }} />
+                </div>
+                <span className={styles.catAmount}>SAR {formatAmount(category.amount, language)}</span>
               </div>
-              <span className={styles.catAmount}>{curr} {formatAmount(amount, language)}</span>
+            ))}
+          </div>
+        </Card>
+
+        <Card header="Upcoming cash demands">
+          {upcomingReminders.length === 0 ? (
+            <EmptyState title="Nothing upcoming" description="Future bills, installments, and reminders will appear here." />
+          ) : (
+            <div className={styles.timelineList}>
+              {upcomingReminders.map((reminder) => (
+                <div key={reminder.id} className={styles.timelineRow}>
+                  <div>
+                    <span className={styles.timelineName}>{reminder.title}</span>
+                    <span className={styles.timelineDate}>{formatDateShort(reminder.dueDate, language)}</span>
+                  </div>
+                  <div className={styles.timelineAmount}>
+                    <AmountDisplay amount={reminder.amount} size="sm" showCurrency />
+                  </div>
+                </div>
+              ))}
+              <div className={styles.safeSpend}>
+                <span>Available after near-term obligations</span>
+                <strong>SAR {formatAmount(snapshot.safeToSpend, language)}</strong>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <Card header={t('insights.goalProgress')}>
+        <div className={styles.goalList}>
+          {goalForecasts.length === 0 ? (
+            <EmptyState title="No goals to forecast yet" description="Add a goal to measure whether your savings pace is realistic." />
+          ) : goalForecasts.map((goal) => (
+            <div key={goal.goalId} className={styles.goalRow}>
+              <div className={styles.goalMain}>
+                <span className={styles.goalName}>{goal.goalName}</span>
+                <span className={styles.goalHint}>
+                  Need SAR {formatAmount(goal.requiredMonthlyContribution, language)} per month
+                  {goal.averageMonthlyContribution > 0 ? ` | current pace SAR ${formatAmount(goal.averageMonthlyContribution, language)}` : ''}
+                </span>
+              </div>
+              <ProgressBar value={goal.progressPercent} size="sm" showValue />
             </div>
           ))}
         </div>
       </Card>
-
-      <Card header={t('insights.goalProgress')}>
-        <div className={styles.goalList}>
-          {goals.map((goal) => {
-            const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
-            return (
-              <div key={goal.id} className={styles.goalRow}>
-                <span className={styles.goalIcon}>{goal.icon}</span>
-                <span className={styles.goalName}>{goal.name}</span>
-                <ProgressBar value={percent} color={goal.color} size="sm" showValue />
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      <Card header={t('insights.debtBurden')}>
-        <div className={styles.burdenSection}>
-          <div>
-            <span className={styles.burdenLabel}>{t('insights.monthlyBurden')}</span>
-            <AmountDisplay amount={monthlyBurden} size="lg" showCurrency />
-          </div>
-          <div className={styles.burdenPct}>
-            <span className={styles.burdenNum}>{burdenPct}%</span>
-            <span className={styles.burdenOf}>{t('insights.percentOfIncome', { percent: String(burdenPct) })}</span>
-          </div>
-        </div>
-        <ProgressBar value={burdenPct} color={burdenPct > 50 ? 'var(--color-danger)' : burdenPct > 30 ? 'var(--color-warning)' : 'var(--color-success)'} size="lg" />
-      </Card>
     </div>
   );
 }
-

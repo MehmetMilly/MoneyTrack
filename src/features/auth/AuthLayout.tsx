@@ -1,22 +1,12 @@
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from '../../lib/i18n/useTranslation';
-import { useAppStore } from '../../lib/data/store';
 import styles from './AuthLayout.module.css';
 
 export default function AuthLayout() {
-  const { t, language } = useTranslation();
-  const setLanguage = useAppStore((s) => s.setLanguage);
+  const { t } = useTranslation();
 
   return (
     <div className={styles.layout}>
-      {/* Language toggle */}
-      <button
-        className={styles.langToggle}
-        onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-      >
-        {language === 'en' ? 'العربية' : 'English'}
-      </button>
-
       {/* Branding side */}
       <div className={styles.branding}>
         <div className={styles.brandContent}>
@@ -26,7 +16,7 @@ export default function AuthLayout() {
             ))}
           </div>
           <div className={styles.brandText}>
-            <span className={styles.logoMark}>◈</span>
+            <span className={styles.logoMark}>MT</span>
             <h1 className={styles.logoTitle}>MoneyTrack</h1>
             <p className={styles.tagline}>{t('app.tagline')}</p>
           </div>

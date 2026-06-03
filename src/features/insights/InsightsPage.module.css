@@ -1,35 +1,242 @@
-.page { animation: fadeIn var(--duration-normal) var(--ease-default); display: flex; flex-direction: column; gap: var(--space-5); }
-.title { font-family: var(--font-display); font-size: var(--text-2xl); margin: 0; }
-.subtitle { font-size: var(--text-sm); color: var(--color-text-tertiary); margin: 0; }
+.page {
+  animation: fadeIn var(--duration-normal) var(--ease-default);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
 
-.cashFlow { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-bottom: var(--space-4); }
-.cashCard { padding: var(--space-4); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: var(--space-2); }
-.incomeCard { background: var(--color-success-bg); }
-.expenseCard { background: var(--color-danger-bg); }
-.netCard { background: var(--color-bg-secondary); }
-.cashLabel { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-weight: var(--weight-medium); }
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+}
 
-.flowBar { position: relative; height: 8px; background: var(--color-success); border-radius: var(--radius-full); overflow: hidden; opacity: 0.6; }
-.flowIncome { position: absolute; inset: 0; background: var(--color-success); }
-.flowExpense { position: absolute; top: 0; bottom: 0; inset-inline-start: 0; background: var(--color-danger); }
+.subtitle {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
 
-.catList { display: flex; flex-direction: column; gap: var(--space-3); }
-.catRow { display: flex; align-items: center; gap: var(--space-3); }
-.catEmoji { font-size: var(--text-md); width: 28px; text-align: center; }
-.catName { font-size: var(--text-sm); color: var(--color-text-primary); width: 100px; flex-shrink: 0; }
-.catBar { flex: 1; height: 8px; background: var(--color-bg-tertiary); border-radius: var(--radius-full); overflow: hidden; }
-.catFill { height: 100%; border-radius: var(--radius-full); transition: width var(--duration-slow) var(--ease-out); }
-.catAmount { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-primary); min-width: 90px; text-align: end; }
+.heroGrid,
+.analysisGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
 
-.goalList { display: flex; flex-direction: column; gap: var(--space-4); }
-.goalRow { display: flex; align-items: center; gap: var(--space-3); }
-.goalIcon { font-size: var(--text-md); }
-.goalName { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-primary); width: 120px; flex-shrink: 0; }
+.cashFlow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
 
-.burdenSection { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-4); }
-.burdenLabel { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); display: block; margin-bottom: var(--space-2); }
-.burdenPct { text-align: end; }
-.burdenNum { font-family: var(--font-display); font-size: var(--text-2xl); color: var(--color-text-primary); display: block; }
-.burdenOf { font-size: var(--text-xs); color: var(--color-text-muted); }
+.cashCard {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
 
-@media (max-width: 640px) { .cashFlow { grid-template-columns: 1fr; } .catName { width: 80px; } }
+.incomeCard {
+  background: var(--color-success-bg);
+}
+
+.expenseCard {
+  background: var(--color-danger-bg);
+}
+
+.netCard {
+  background: var(--color-bg-secondary);
+}
+
+.cashLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+}
+
+.flowFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.goodDelta,
+.badDelta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goodDelta {
+  color: var(--color-success);
+}
+
+.badDelta {
+  color: var(--color-danger);
+}
+
+.recommendationList,
+.catList,
+.goalList,
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.recommendationRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+}
+
+.recommendationRow.warning {
+  background: color-mix(in srgb, var(--color-danger-bg) 48%, var(--color-bg-card));
+}
+
+.recommendationRow.positive {
+  background: color-mix(in srgb, var(--color-success-bg) 48%, var(--color-bg-card));
+}
+
+.recommendationRow.neutral {
+  background: color-mix(in srgb, var(--color-info-bg) 42%, var(--color-bg-card));
+}
+
+.recommendationIcon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+.recommendationRow h3,
+.goalName {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+}
+
+.recommendationRow p,
+.catSubtext,
+.goalHint,
+.timelineDate {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.catRow {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.catEmoji {
+  width: 30px;
+  text-align: center;
+  font-size: var(--text-md);
+}
+
+.catMeta {
+  min-width: 0;
+}
+
+.catName {
+  display: block;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.catBar {
+  height: 10px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.catFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+.catAmount {
+  min-width: 102px;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-align: end;
+}
+
+.timelineRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.timelineName {
+  display: block;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.timelineAmount {
+  text-align: end;
+}
+
+.safeSpend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  color: var(--color-text-secondary);
+}
+
+.safeSpend strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-xl);
+}
+
+.goalRow {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.goalMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .heroGrid,
+  .analysisGrid,
+  .cashFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .catRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .catBar,
+  .catAmount {
+    grid-column: 2;
+  }
+}

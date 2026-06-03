@@ -44,7 +44,13 @@ function interpolate(template: string, params?: Record<string, string | number>)
 
 export function useTranslation() {
   const language = useAppStore((s) => s.settings.language);
-  const dict = translations[language];
+  // Arabic copy is currently incomplete/corrupted in the source file, so keep
+  // the interface in English until the localization can be reviewed properly.
+  let dictionaryLanguage: Language = language;
+  if (dictionaryLanguage === 'ar') {
+    dictionaryLanguage = 'en';
+  }
+  const dict = translations[dictionaryLanguage];
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>): string => {
@@ -56,9 +62,10 @@ export function useTranslation() {
 
   return {
     t,
-    language,
-    isRTL: language === 'ar',
-    dir: language === 'ar' ? 'rtl' as const : 'ltr' as const,
+    language: dictionaryLanguage,
+    selectedLanguage: language,
+    isRTL: false,
+    dir: 'ltr' as const,
   };
 }
 

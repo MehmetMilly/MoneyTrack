@@ -1,13 +1,41 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle, Plus, Target, TrendDown, TrendUp, Wallet } from '@phosphor-icons/react';
+import {
+  ArrowCircleDown,
+  ArrowCircleUp,
+  CheckCircle,
+  Clock,
+  Coins,
+  Plus,
+  Sparkle,
+  Target,
+  TrendDown,
+  TrendUp,
+  WarningCircle,
+} from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { useAppStore } from '../../lib/data/store';
+import {
+  buildCategorySpendingInsights,
+  buildFinancialRecommendations,
+  buildGoalForecast,
+  buildMonthlySnapshot,
+} from '../../lib/data/financialInsights';
 import { formatAmount } from '../../lib/utils/currency';
 import { formatDateShort } from '../../lib/utils/dates';
-import { Card, AmountDisplay, ProgressBar, Badge, Button, EmptyState } from '../../components/ui';
+import { AmountDisplay, Button, EmptyState } from '../../components/ui';
 import styles from './DashboardPage.module.css';
-import type { PlanningEntry } from '../../lib/data/types';
+import type { Debt, PlanningEntry } from '../../lib/data/types';
+
+type LedgerItem = {
+  id: string;
+  title: string;
+  meta: string;
+  amount: number;
+  status: PlanningEntry['status'] | 'available';
+  kind: 'asset' | 'drain';
+  entry?: PlanningEntry;
+};
 
 function effectiveAmount(entry: PlanningEntry) {
   if (entry.status === 'cancelled') return 0;
@@ -15,14 +43,27 @@ function effectiveAmount(entry: PlanningEntry) {
   return entry.expectedAmount;
 }
 
+function debtRemaining(debt: Debt) {
+  return Math.max(0, debt.totalAmount - debt.paidAmount);
+}
+
+function categoryLabel(value: string) {
+  return value.replaceAll('_', ' ');
+}
+
 export default function DashboardPage() {
   const { t, language } = useTranslation();
+  const accounts = useAppStore((s) => s.accounts);
+  const debts = useAppStore((s) => s.debts);
   const planningEntries = useAppStore((s) => s.planningEntries);
   const goals = useAppStore((s) => s.goals);
+  const transactions = useAppStore((s) => s.transactions);
+  const categories = useAppStore((s) => s.categories);
+  const reminders = useAppStore((s) => s.reminders);
   const plannerSettings = useAppStore((s) => s.settings.planner);
-  const getPlannerPositiveTotal = useAppStore((s) => s.getPlannerPositiveTotal);
-  const getPlannerNegativeTotal = useAppStore((s) => s.getPlannerNegativeTotal);
-  const getPlannerNetTotal = useAppStore((s) => s.getPlannerNetTotal);
+  const positiveTotal = useAppStore((s) => s.getPlannerPositiveTotal)();
+  const negativeTotal = useAppStore((s) => s.getPlannerNegativeTotal)();
+  const netTotal = useAppStore((s) => s.getPlannerNetTotal)();
   const markPlanningEntryConfirmed = useAppStore((s) => s.markPlanningEntryConfirmed);
   const markPlanningEntryCancelled = useAppStore((s) => s.markPlanningEntryCancelled);
   const deletePlanningEntry = useAppStore((s) => s.deletePlanningEntry);
@@ -30,9 +71,14 @@ export default function DashboardPage() {
   const [actualInputs, setActualInputs] = useState<Record<string, string>>({});
 
   const primaryGoal = goals.find((goal) => goal.id === plannerSettings.primaryGoalId) || goals[0] || null;
-  const positiveTotal = getPlannerPositiveTotal();
-  const negativeTotal = getPlannerNegativeTotal();
-  const netTotal = getPlannerNetTotal();
+  const snapshot = buildMonthlySnapshot({ transactions, reminders });
+  const categoryInsights = buildCategorySpendingInsights({ transactions, categories });
+  const goalForecasts = goals.map((goal) => buildGoalForecast(goal));
+  const recommendations = buildFinancialRecommendations({
+    snapshot,
+    categoryInsights,
+    goals: goalForecasts,
+  });
   const goalProgressAmount = plannerSettings.goalProgressMode === 'manual_contributions'
     ? primaryGoal?.currentAmount || 0
     : netTotal;
@@ -41,15 +87,77 @@ export default function DashboardPage() {
     : 0;
   const remaining = primaryGoal ? Math.max(0, primaryGoal.targetAmount - goalProgressAmount) : 0;
   const activeEntries = planningEntries.filter((entry) => entry.status !== 'cancelled');
-  const positiveEntries = activeEntries.filter((entry) => entry.kind === 'positive');
-  const negativeEntries = activeEntries.filter((entry) => entry.kind === 'negative');
   const pendingEntries = activeEntries.filter((entry) => entry.status === 'expected');
-  const confirmedPositiveTotal = positiveEntries
-    .filter((entry) => entry.status === 'confirmed')
+  const confirmedPlannerAssets = activeEntries
+    .filter((entry) => entry.kind === 'positive' && entry.status === 'confirmed')
     .reduce((sum, entry) => sum + effectiveAmount(entry), 0);
-  const expectedPositiveTotal = positiveEntries
-    .filter((entry) => entry.status === 'expected')
+  const expectedPlannerAssets = activeEntries
+    .filter((entry) => entry.kind === 'positive' && entry.status === 'expected')
     .reduce((sum, entry) => sum + effectiveAmount(entry), 0);
+  const accountAssets = accounts.reduce((sum, account) => sum + account.balance, 0);
+  const receivables = debts
+    .filter((debt) => debt.type === 'owed_to_me' && debt.status !== 'paid')
+    .reduce((sum, debt) => sum + debtRemaining(debt), 0);
+  const confirmedAssets = accountAssets + confirmedPlannerAssets;
+  const expectedAssets = receivables + expectedPlannerAssets;
+  const topCategory = categoryInsights[0];
+  const primaryGoalForecast = primaryGoal ? goalForecasts.find((goal) => goal.goalId === primaryGoal.id) || null : null;
+
+  const assetItems: LedgerItem[] = [
+    ...accounts.map((account) => ({
+      id: `account-${account.id}`,
+      title: account.name,
+      meta: t(`accounts.${account.type}` as 'accounts.bank'),
+      amount: account.balance,
+      status: 'available' as const,
+      kind: 'asset' as const,
+    })),
+    ...debts
+      .filter((debt) => debt.type === 'owed_to_me' && debt.status !== 'paid')
+      .map((debt) => ({
+        id: `debt-${debt.id}`,
+        title: debt.name,
+        meta: t('debts.owedToMe'),
+        amount: debtRemaining(debt),
+        status: 'expected' as const,
+        kind: 'asset' as const,
+      })),
+    ...activeEntries
+      .filter((entry) => entry.kind === 'positive')
+      .map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        meta: `${categoryLabel(entry.category)}${entry.dueDate ? ` - ${formatDateShort(entry.dueDate, language)}` : ''}`,
+        amount: effectiveAmount(entry),
+        status: entry.status,
+        kind: 'asset' as const,
+        entry,
+      })),
+  ];
+
+  const drainItems: LedgerItem[] = [
+    ...debts
+      .filter((debt) => debt.type === 'owed_by_me' && debt.status !== 'paid')
+      .map((debt) => ({
+        id: `debt-${debt.id}`,
+        title: debt.name,
+        meta: t('debts.owedByMe'),
+        amount: debtRemaining(debt),
+        status: 'expected' as const,
+        kind: 'drain' as const,
+      })),
+    ...activeEntries
+      .filter((entry) => entry.kind === 'negative')
+      .map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        meta: `${categoryLabel(entry.category)}${entry.dueDate ? ` - ${formatDateShort(entry.dueDate, language)}` : ''}`,
+        amount: effectiveAmount(entry),
+        status: entry.status,
+        kind: 'drain' as const,
+        entry,
+      })),
+  ];
 
   const handleConfirm = async (entry: PlanningEntry, actualAmount?: string) => {
     const amount = parseFloat(actualAmount || String(entry.expectedAmount));
@@ -57,128 +165,208 @@ export default function DashboardPage() {
 
     try {
       await markPlanningEntryConfirmed(entry.id, amount);
+      setActualInputs((current) => ({ ...current, [entry.id]: '' }));
     } catch {
-      // Store error surfaces on entries page; dashboard keeps the common path quiet.
+      // Error state is available on the full entries page.
     }
   };
 
-  const renderEntry = (entry: PlanningEntry) => (
-    <div key={entry.id} className={styles.entryRow}>
-      <div className={styles.entryMain}>
-        <span className={`${styles.entryDot} ${entry.kind === 'positive' ? styles.positiveDot : styles.negativeDot}`} />
-        <div>
-          <span className={styles.entryTitle}>{entry.title}</span>
-          <span className={styles.entryMeta}>
-            {entry.category.replaceAll('_', ' ')}
-            {entry.dueDate ? ` · ${formatDateShort(entry.dueDate, language)}` : ''}
-          </span>
-        </div>
+  const renderLedgerItem = (item: LedgerItem, index: number) => (
+    <div key={item.id} className={`${styles.ledgerRow} ${styles[item.kind]} slide-up stagger-${Math.min(index + 1, 8)}`}>
+      <span className={styles.rowMark} />
+      <div className={styles.rowCopy}>
+        <span className={styles.rowTitle}>{item.title}</span>
+        <span className={styles.rowMeta}>{item.meta}</span>
       </div>
-      <div className={styles.entryAmount}>
-        <AmountDisplay amount={effectiveAmount(entry)} size="sm" sign={entry.kind === 'positive' ? '+' : '-'} showCurrency />
-        <Badge variant={entry.status === 'confirmed' ? 'paid' : 'upcoming'} stamp>
-          {t(`planner.${entry.status}` as 'planner.expected')}
-        </Badge>
-        {entry.status === 'confirmed' && entry.actualAmount !== undefined && entry.actualAmount !== entry.expectedAmount && (
-          <span className={styles.entryMeta}>{t('planner.expectedWas', { amount: formatAmount(entry.expectedAmount, language) })}</span>
-        )}
+      <div className={styles.rowAmount}>
+        <AmountDisplay amount={item.amount} size="sm" sign={item.kind === 'asset' ? '+' : '-'} showCurrency />
+        <span className={`${styles.statusPill} ${styles[item.status]}`}>
+          {item.status === 'available' ? t('planner.available') : t(`planner.${item.status}` as 'planner.expected')}
+        </span>
       </div>
     </div>
   );
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.kicker}>{t('planner.dashboardKicker')}</p>
-          <h1 className={styles.greeting}>{primaryGoal?.name || t('planner.noPrimaryGoal')}</h1>
-          <p className={styles.subtitle}>{t('planner.dashboardSubtitle')}</p>
+      <section className={`${styles.commandSurface} fade-in`}>
+        <div className={styles.goalPane}>
+          <div className={styles.goalTopline}>
+            <Target size={22} weight="duotone" />
+            <span>{t('planner.primaryGoal')}</span>
+          </div>
+          <h1>{primaryGoal?.name || t('planner.noPrimaryGoal')}</h1>
+          <div className={styles.goalMeta}>
+            <span>{primaryGoal ? `${t('goals.targetAmount')}: SAR ${formatAmount(primaryGoal.targetAmount, language)}` : t('planner.createGoalHint')}</span>
+            {primaryGoal && <span>{t('goals.targetDate')}: {formatDateShort(primaryGoal.targetDate, language)}</span>}
+          </div>
+          <div className={styles.actionRail} aria-label={t('planner.quickAdd')}>
+            <Link to="/transactions/new?kind=positive"><ArrowCircleUp size={18} />{t('planner.addAsset')}</Link>
+            <Link to="/transactions/new?kind=negative"><ArrowCircleDown size={18} />{t('planner.addDrain')}</Link>
+            <Link to="/goals"><Target size={18} />{t('planner.chooseGoal')}</Link>
+          </div>
         </div>
-        <div className={styles.quickActions}>
-          <Link to="/goals" className={styles.secondaryLink}>{t('planner.chooseGoal')}</Link>
-          <Link to="/transactions/new" className={styles.addBtn}>
-            <Plus size={18} weight="bold" />
-            <span>{t('planner.addPlannerEntry')}</span>
-          </Link>
-        </div>
-      </header>
 
-      <section className={`${styles.hero} fade-in`}>
-        <div className={styles.heroCopy}>
-          <div className={styles.heroIcon}><Target size={28} weight="duotone" /></div>
-          <div>
-            <span className={styles.metricLabel}>{t('planner.primaryGoal')}</span>
-            <h2>{primaryGoal?.name || t('planner.createPrimaryGoal')}</h2>
-            <p>
-              {primaryGoal
-                ? `${t('goals.targetAmount')}: SAR ${formatAmount(primaryGoal.targetAmount, language)} · ${t('goals.targetDate')}: ${formatDateShort(primaryGoal.targetDate, language)}`
-                : t('planner.createGoalHint')}
-            </p>
+        <div className={styles.progressPane}>
+          <div className={styles.progressNumber}>
+            <span>{progressPercent}</span>
+            <em>%</em>
+          </div>
+          <div className={styles.progressTrack} aria-label={`${progressPercent}%`}>
+            <span style={{ inlineSize: `${progressPercent}%`, backgroundColor: primaryGoal?.color || undefined }} />
+          </div>
+          <div className={styles.remainingBlock}>
+            <span>{!primaryGoal ? t('planner.noPrimaryGoal') : remaining <= 0 ? t('planner.fullyFunded') : t('planner.remainingNeeded')}</span>
+            <AmountDisplay amount={remaining} size="lg" showCurrency />
           </div>
         </div>
-        <div className={styles.heroNumbers}>
-          <span className={styles.heroPct}>{progressPercent}%</span>
-          <ProgressBar value={progressPercent} color={primaryGoal?.color || 'var(--color-accent)'} size="lg" />
-          <div className={styles.heroAmounts}>
-            <span>{t('planner.totalPositiveMoney')}</span>
-            <AmountDisplay amount={positiveTotal} size="md" showCurrency />
-          </div>
-          <div className={styles.heroAmounts}>
+
+        <div className={styles.netPane}>
+          <div>
             <span>{t('planner.projectedNet')}</span>
-            <AmountDisplay amount={Math.abs(netTotal)} size="md" sign={netTotal >= 0 ? '+' : '-'} showCurrency />
+            <AmountDisplay amount={Math.abs(netTotal)} size="lg" sign={netTotal >= 0 ? '+' : '-'} showCurrency />
           </div>
-          <div className={styles.heroAmounts}>
-            <span>{remaining <= 0 ? t('planner.fullyFunded') : t('planner.remainingNeeded')}</span>
-            <AmountDisplay amount={remaining} size="md" showCurrency />
-          </div>
-          <p className={styles.statusText}>{remaining <= 0 ? t('planner.fullyFunded') : t('planner.needsMore', { amount: formatAmount(remaining, language) })}</p>
+          <dl>
+            <div>
+              <dt>{t('planner.totalAssets')}</dt>
+              <dd>SAR {formatAmount(positiveTotal, language)}</dd>
+            </div>
+            <div>
+              <dt>{t('planner.totalDrains')}</dt>
+              <dd>SAR {formatAmount(negativeTotal, language)}</dd>
+            </div>
+            <div>
+              <dt>{t('planner.pendingExpectedEntries')}</dt>
+              <dd>{pendingEntries.length}</dd>
+            </div>
+          </dl>
         </div>
       </section>
 
-      <div className={styles.metrics}>
-        <div className={styles.metricCard}>
-          <TrendUp size={20} color="var(--color-success)" />
-          <span className={styles.metricLabel}>{t('planner.confirmedPositives')}</span>
-          <AmountDisplay amount={confirmedPositiveTotal} size="md" showCurrency />
+      <section className={styles.focusStrip}>
+        <article className={styles.focusCard}>
+          <div className={styles.focusHeader}>
+            <span>Month net</span>
+            {snapshot.netDelta >= 0 ? <TrendUp size={16} /> : <TrendDown size={16} />}
+          </div>
+          <strong><AmountDisplay amount={Math.abs(snapshot.net)} size="md" sign={snapshot.net >= 0 ? '+' : '-'} showCurrency /></strong>
+          <p>
+            {snapshot.netDelta === 0
+              ? 'In line with last month.'
+              : `${snapshot.netDelta > 0 ? 'Up' : 'Down'} SAR ${formatAmount(Math.abs(snapshot.netDelta), language)} versus last month.`}
+          </p>
+        </article>
+        <article className={styles.focusCard}>
+          <div className={styles.focusHeader}>
+            <span>Spending pressure</span>
+            <WarningCircle size={16} />
+          </div>
+          <strong>{topCategory ? topCategory.categoryName : 'No expense data yet'}</strong>
+          <p>
+            {topCategory
+              ? `${Math.round(topCategory.shareOfExpenses * 100)}% of this month's expenses, SAR ${formatAmount(topCategory.amount, language)} total.`
+              : 'Add expenses to see what is taking the biggest share of your month.'}
+          </p>
+        </article>
+        <article className={styles.focusCard}>
+          <div className={styles.focusHeader}>
+            <span>Goal pace</span>
+            <Sparkle size={16} />
+          </div>
+          <strong>{primaryGoalForecast ? `${primaryGoalForecast.progressPercent}% funded` : 'No primary goal selected'}</strong>
+          <p>
+            {primaryGoalForecast
+              ? `${primaryGoalForecast.isOffTrack ? 'Needs' : 'Holding'} SAR ${formatAmount(primaryGoalForecast.requiredMonthlyContribution, language)} per month to land on time.`
+              : 'Pick a goal to see whether your current plan is enough.'}
+          </p>
+        </article>
+      </section>
+
+      <section className={styles.assetStrip}>
+        <div>
+          <Coins size={18} />
+          <span>{t('planner.confirmedAssets')}</span>
+          <strong>SAR {formatAmount(confirmedAssets, language)}</strong>
         </div>
-        <div className={styles.metricCard}>
-          <Wallet size={20} color="var(--color-info)" />
-          <span className={styles.metricLabel}>{t('planner.expectedPositives')}</span>
-          <AmountDisplay amount={expectedPositiveTotal} size="md" showCurrency />
+        <div>
+          <Clock size={18} />
+          <span>{t('planner.expectedAssets')}</span>
+          <strong>SAR {formatAmount(expectedAssets, language)}</strong>
         </div>
-        <div className={styles.metricCard}>
-          <TrendDown size={20} color="var(--color-danger)" />
-          <span className={styles.metricLabel}>{t('planner.negativeEntries')}</span>
-          <AmountDisplay amount={negativeTotal} size="md" sign="-" showCurrency />
+        <div>
+          <ArrowCircleDown size={18} />
+          <span>{t('planner.negativeEntries')}</span>
+          <strong>SAR {formatAmount(negativeTotal, language)}</strong>
         </div>
-        <div className={`${styles.metricCard} ${styles.netMetric}`}>
-          <CheckCircle size={20} color="var(--color-accent)" />
-          <span className={styles.metricLabel}>{t('planner.projectedTowardGoal')}</span>
-          <AmountDisplay amount={Math.abs(netTotal)} size="md" sign={netTotal >= 0 ? '+' : '-'} showCurrency />
+      </section>
+
+      <section className={styles.recommendationPanel}>
+        <div className={styles.sectionHead}>
+          <h2>What deserves attention</h2>
+          <span>Updated from your latest entries and obligations</span>
         </div>
+        <div className={styles.recommendationGrid}>
+          {recommendations.map((recommendation, index) => (
+            <article
+              key={recommendation.id}
+              className={`${styles.recommendationCard} ${styles[recommendation.tone]} slide-up stagger-${Math.min(index + 1, 4)}`}
+            >
+              <span className={styles.recommendationKind}>{recommendation.kind}</span>
+              <h3>{recommendation.title}</h3>
+              <p>{recommendation.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className={styles.workbench}>
+        <section className={styles.ledgerPanel}>
+          <div className={styles.sectionHead}>
+            <h2>{t('planner.assets')}</h2>
+            <Link to="/transactions/new?kind=positive"><Plus size={16} />{t('common.add')}</Link>
+          </div>
+          <div className={styles.ledgerList}>
+            {assetItems.length === 0
+              ? <p className={styles.noData}>{t('planner.noAssetEntries')}</p>
+              : assetItems.slice(0, 8).map(renderLedgerItem)}
+          </div>
+        </section>
+
+        <section className={styles.ledgerPanel}>
+          <div className={styles.sectionHead}>
+            <h2>{t('planner.drains')}</h2>
+            <Link to="/transactions/new?kind=negative"><Plus size={16} />{t('common.add')}</Link>
+          </div>
+          <div className={styles.ledgerList}>
+            {drainItems.length === 0
+              ? <p className={styles.noData}>{t('planner.noDrainEntries')}</p>
+              : drainItems.slice(0, 8).map(renderLedgerItem)}
+          </div>
+        </section>
       </div>
 
-      <div className={styles.grid}>
-        <Card header={t('planner.positiveEntries')} headerAction={<Link to="/transactions/new?kind=positive" className={styles.viewAll}>{t('common.add')}</Link>}>
-          <div className={styles.entryList}>
-            {positiveEntries.length === 0 ? <p className={styles.noData}>{t('planner.noPositiveEntries')}</p> : positiveEntries.slice(0, 5).map(renderEntry)}
-          </div>
-        </Card>
-
-        <Card header={t('planner.negativeEntries')} headerAction={<Link to="/transactions/new?kind=negative" className={styles.viewAll}>{t('common.add')}</Link>}>
-          <div className={styles.entryList}>
-            {negativeEntries.length === 0 ? <p className={styles.noData}>{t('planner.noNegativeEntries')}</p> : negativeEntries.slice(0, 5).map(renderEntry)}
-          </div>
-        </Card>
-
-        <Card header={t('planner.pendingExpectedEntries')} className={styles.pendingCard}>
-          <div className={styles.entryList}>
-            {pendingEntries.length === 0 && (
-              <EmptyState icon={<CheckCircle size={42} weight="thin" />} title={t('planner.noPendingTitle')} description={t('planner.noPendingDescription')} />
-            )}
-            {pendingEntries.map((entry) => (
-              <div key={entry.id} className={styles.pendingRow}>
-                {renderEntry(entry)}
+      <section className={styles.pendingPanel}>
+        <div className={styles.sectionHead}>
+          <h2>{t('planner.pendingExpectedEntries')}</h2>
+          <Link to="/transactions">{t('planner.reviewEntries')}</Link>
+        </div>
+        {pendingEntries.length === 0 ? (
+          <EmptyState icon={<CheckCircle size={42} weight="thin" />} title={t('planner.noPendingTitle')} description={t('planner.noPendingDescription')} />
+        ) : (
+          <div className={styles.pendingList}>
+            {pendingEntries.map((entry, index) => (
+              <div key={entry.id} className={`${styles.pendingRow} slide-up stagger-${Math.min(index + 1, 8)}`}>
+                <div className={styles.pendingMain}>
+                  <span className={`${styles.rowMark} ${entry.kind === 'positive' ? styles.asset : styles.drain}`} />
+                  <div className={styles.rowCopy}>
+                    <span className={styles.rowTitle}>{entry.title}</span>
+                    <span className={styles.rowMeta}>
+                      {categoryLabel(entry.category)}
+                      {entry.dueDate ? ` - ${formatDateShort(entry.dueDate, language)}` : ''}
+                    </span>
+                  </div>
+                  <AmountDisplay amount={effectiveAmount(entry)} size="sm" sign={entry.kind === 'positive' ? '+' : '-'} showCurrency />
+                </div>
                 <div className={styles.pendingActions}>
                   <input
                     className={styles.actualInput}
@@ -196,17 +384,8 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </Card>
-
-        <Card header={t('planner.quickAdd')} className={styles.quickCard}>
-          <div className={styles.quickGrid}>
-            <Link to="/goals" className={styles.quickTile}>{t('planner.createGoal')}</Link>
-            <Link to="/transactions/new?kind=positive" className={styles.quickTile}>{t('planner.addPositive')}</Link>
-            <Link to="/transactions/new?kind=negative" className={styles.quickTile}>{t('planner.addNegative')}</Link>
-            <Link to="/transactions" className={styles.quickTile}>{t('planner.reviewEntries')}</Link>
-          </div>
-        </Card>
-      </div>
+        )}
+      </section>
     </div>
   );
 }

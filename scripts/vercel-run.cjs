@@ -1,20 +1,25 @@
-const os = require('node:os');
-const { syncBuiltinESMExports } = require('node:module');
-const { pathToFileURL } = require('node:url');
+const { spawn } = require('node:child_process');
 const path = require('node:path');
 
-const safeHostname = 'CodexHost';
+const npxBin = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const shimPath = path.resolve(__dirname, 'vercel-hostname-shim.cjs');
+const existingNodeOptions = process.env.NODE_OPTIONS ? `${process.env.NODE_OPTIONS} ` : '';
+const vercelCliVersion = '54.7.1';
 
-if (typeof os.hostname === 'function') {
-  os.hostname = () => safeHostname;
-  syncBuiltinESMExports();
-}
+const child = spawn(npxBin, ['--yes', `vercel@${vercelCliVersion}`, ...process.argv.slice(2)], {
+  cwd: path.resolve(__dirname, '..'),
+  env: {
+    ...process.env,
+    NODE_OPTIONS: `${existingNodeOptions}--require=${shimPath}`,
+  },
+  shell: false,
+  stdio: 'inherit',
+});
 
-const cliEntry = pathToFileURL(
-  path.resolve(__dirname, '..', 'node_modules', 'vercel', 'dist', 'vc.js')
-).href;
-
-import(cliEntry).catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+child.on('exit', (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+    return;
+  }
+  process.exitCode = code ?? 1;
 });

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Envelope, Lock } from '@phosphor-icons/react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { useAppStore } from '../../lib/data/store';
+import { isFirebaseConfigured } from '../../lib/firebase/client';
 import Input from '../../components/ui/Input/Input';
 import Button from '../../components/ui/Button/Button';
 import styles from './LoginPage.module.css';
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const login = useAppStore((s) => s.login);
   const loginWithGoogle = useAppStore((s) => s.loginWithGoogle);
+  const startDemoSession = useAppStore((s) => s.startDemoSession);
   const loading = useAppStore((s) => s.loading.auth);
   const error = useAppStore((s) => s.errors.auth);
   const clearError = useAppStore((s) => s.clearError);
@@ -41,6 +43,12 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoMode = () => {
+    clearError('auth');
+    startDemoSession();
+    navigate('/dashboard');
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -63,11 +71,11 @@ export default function LoginPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder="password"
           iconLeft={<Lock size={18} />}
           required
         />
-        {error && <p className={styles.subtitle}>{error}</p>}
+        {error && <p className={styles.errorText}>{error}</p>}
 
         <Link to="/forgot-password" className={styles.forgotLink}>
           {t('auth.forgotLink')}
@@ -79,6 +87,17 @@ export default function LoginPage() {
         <Button type="button" fullWidth size="lg" variant="secondary" loading={loading} onClick={handleGoogleLogin}>
           {t('auth.googleButton')}
         </Button>
+
+        <div className={styles.demoBlock}>
+          <Button type="button" fullWidth size="lg" variant="ghost" onClick={handleDemoMode}>
+            {t('auth.demoButton')}
+          </Button>
+          <p className={styles.demoHint}>
+            {isFirebaseConfigured
+              ? t('auth.demoHint')
+              : 'Firebase is not configured locally, so demo mode is the fastest way to review the app.'}
+          </p>
+        </div>
       </form>
 
       <p className={styles.footer}>

@@ -1,17 +1,19 @@
-// ============================================
-// MoneyTrack — App Shell & Layout
-// Desktop sidebar + Mobile bottom tabs
-// ============================================
-
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  House, Wallet, ArrowsLeftRight, Scales, Target,
-  ChartLineUp, GearSix, Plus, List
+  ArrowsLeftRight,
+  ChartLineUp,
+  GearSix,
+  House,
+  List,
+  Plus,
+  Scales,
+  Target,
+  Wallet,
 } from '@phosphor-icons/react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { useAppStore } from '../../lib/data/store';
 import styles from './AppLayout.module.css';
-import { useState } from 'react';
 
 const navItems = [
   { path: '/dashboard', icon: House, labelKey: 'nav.dashboard' as const },
@@ -23,7 +25,6 @@ const navItems = [
   { path: '/settings', icon: GearSix, labelKey: 'nav.settings' as const },
 ];
 
-// Mobile bottom tabs show a subset
 const mobileNavItems = [
   { path: '/dashboard', icon: House, labelKey: 'nav.dashboard' as const },
   { path: '/transactions', icon: ArrowsLeftRight, labelKey: 'nav.transactions' as const },
@@ -35,29 +36,29 @@ const mobileNavItems = [
 export default function AppLayout() {
   const { t, isRTL } = useTranslation();
   const profile = useAppStore((s) => s.profile);
+  const sessionMode = useAppStore((s) => s.sessionMode);
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const initials = (profile.name || 'MT')
     .split(' ')
-    .map((n) => n[0])
+    .map((namePart) => namePart[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
 
   return (
     <div className={`${styles.layout} ${isRTL ? styles.rtl : ''}`}>
-      {/* Desktop Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.collapsed : ''}`}>
         <div className={styles.sidebarHeader}>
           <div className={styles.logo}>
-            <span className={styles.logoIcon}>◈</span>
+            <span className={styles.logoIcon}>MT</span>
             {!sidebarCollapsed && <span className={styles.logoText}>MoneyTrack</span>}
           </div>
           <button
             className={styles.collapseBtn}
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            aria-label="Toggle sidebar"
+            aria-label={t('nav.toggleSidebar')}
           >
             <List size={20} weight="regular" />
           </button>
@@ -68,9 +69,7 @@ export default function AppLayout() {
             <NavLink
               key={path}
               to={path}
-              className={({ isActive }) =>
-                `${styles.navItem} ${isActive ? styles.navActive : ''}`
-              }
+              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
             >
               <Icon size={22} weight={location.pathname.startsWith(path) ? 'fill' : 'regular'} />
               {!sidebarCollapsed && <span>{t(labelKey)}</span>}
@@ -91,29 +90,27 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className={styles.main}>
+        {sessionMode === 'demo' && (
+          <div className={styles.demoBanner}>
+            <strong>{t('app.demoMode')}</strong>
+            <span>{t('app.demoReadonly')}</span>
+          </div>
+        )}
         <Outlet />
       </main>
 
-      {/* Mobile Bottom Tabs */}
       <nav className={styles.bottomTabs}>
-        {mobileNavItems.map(({ path, icon: Icon, labelKey }) => {
-          // Special center FAB for "add"
-          return (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) =>
-                `${styles.tabItem} ${isActive ? styles.tabActive : ''}`
-              }
-            >
-              <Icon size={24} weight={location.pathname.startsWith(path) ? 'fill' : 'regular'} />
-              <span className={styles.tabLabel}>{t(labelKey)}</span>
-            </NavLink>
-          );
-        })}
-        {/* Center FAB */}
+        {mobileNavItems.map(({ path, icon: Icon, labelKey }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) => `${styles.tabItem} ${isActive ? styles.tabActive : ''}`}
+          >
+            <Icon size={24} weight={location.pathname.startsWith(path) ? 'fill' : 'regular'} />
+            <span className={styles.tabLabel}>{t(labelKey)}</span>
+          </NavLink>
+        ))}
         <NavLink to="/transactions/new" className={styles.fab}>
           <Plus size={24} weight="bold" />
         </NavLink>

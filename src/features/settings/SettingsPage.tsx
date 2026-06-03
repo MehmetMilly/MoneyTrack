@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Globe, Sun, Moon, Desktop, ShieldCheck, SignOut, CaretRight, CheckCircle } from '@phosphor-icons/react';
+import { Sun, Moon, Desktop, ShieldCheck, SignOut, CaretRight, CheckCircle } from '@phosphor-icons/react';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 import { useAppStore } from '../../lib/data/store';
 import { Card } from '../../components/ui';
@@ -17,7 +17,6 @@ export default function SettingsPage() {
   const authLoading = useAppStore((s) => s.loading.auth);
   const settingsError = useAppStore((s) => s.errors.settings);
   const authError = useAppStore((s) => s.errors.auth);
-  const setLanguage = useAppStore((s) => s.setLanguage);
   const setTheme = useAppStore((s) => s.setTheme);
   const logout = useAppStore((s) => s.logout);
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ export default function SettingsPage() {
   const syncLabel = isOffline
     ? t('dashboard.offline')
     : lastSyncedAt
-      ? `${formatDate(lastSyncedAt, language)} ${new Date(lastSyncedAt).toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-SA', {
+      ? `${formatDate(lastSyncedAt, language)} ${new Date(lastSyncedAt).toLocaleTimeString('en-SA', {
           hour: 'numeric',
           minute: '2-digit',
         })}`
@@ -65,24 +64,10 @@ export default function SettingsPage() {
 
       {/* Preferences */}
       <Card header={t('settings.preferences')}>
-        {/* Language */}
-        <div className={styles.settingRow}>
-          <div className={styles.settingLabel}>
-            <Globe size={18} />
-            <span>{t('settings.language')}</span>
-          </div>
-          <div className={styles.langToggle}>
-            <button className={`${styles.langBtn} ${language === 'en' ? styles.langActive : ''}`} onClick={() => setLanguage('en')}>{t('settings.english')}</button>
-            <button className={`${styles.langBtn} ${language === 'ar' ? styles.langActive : ''}`} onClick={() => setLanguage('ar')}>{t('settings.arabic')}</button>
-          </div>
-        </div>
-
-        <div className={styles.divider} />
-
         {/* Currency */}
         <div className={styles.settingRow}>
           <div className={styles.settingLabel}>
-            <span style={{ fontSize: 'var(--text-lg)' }}>﷼</span>
+            <span style={{ fontSize: 'var(--text-lg)' }}>SAR</span>
             <span>{t('settings.currency')}</span>
           </div>
           <span className={styles.settingValue}>{t('settings.sarLabel')}</span>
@@ -136,7 +121,7 @@ export default function SettingsPage() {
       {/* About */}
       <Card>
         <div className={styles.settingRow}>
-          <span className={styles.aboutText}>{t('settings.about')} — {t('settings.version')}</span>
+          <span className={styles.aboutText}>{t('settings.about')} - {t('settings.version')}</span>
         </div>
       </Card>
 
