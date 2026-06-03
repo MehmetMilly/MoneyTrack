@@ -79,9 +79,7 @@ export default function DashboardPage() {
     categoryInsights,
     goals: goalForecasts,
   });
-  const goalProgressAmount = plannerSettings.goalProgressMode === 'manual_contributions'
-    ? primaryGoal?.currentAmount || 0
-    : netTotal;
+  const goalProgressAmount = primaryGoal?.currentAmount || 0;
   const progressPercent = primaryGoal && primaryGoal.targetAmount > 0
     ? Math.max(0, Math.min(100, Math.round((goalProgressAmount / primaryGoal.targetAmount) * 100)))
     : 0;
@@ -214,6 +212,10 @@ export default function DashboardPage() {
           </div>
           <div className={styles.progressTrack} aria-label={`${progressPercent}%`}>
             <span style={{ inlineSize: `${progressPercent}%`, backgroundColor: primaryGoal?.color || undefined }} />
+          </div>
+          <div className={styles.remainingBlock}>
+            <span>{!primaryGoal ? t('planner.noPrimaryGoal') : remaining <= 0 ? t('planner.fullyFunded') : t('goals.savedSoFar')}</span>
+            {primaryGoal && <strong>SAR {formatAmount(goalProgressAmount, language)}</strong>}
           </div>
           <div className={styles.remainingBlock}>
             <span>{!primaryGoal ? t('planner.noPrimaryGoal') : remaining <= 0 ? t('planner.fullyFunded') : t('planner.remainingNeeded')}</span>

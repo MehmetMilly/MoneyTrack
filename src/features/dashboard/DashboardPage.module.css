@@ -134,6 +134,12 @@
   gap: var(--space-2);
 }
 
+.remainingBlock strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
 .remainingBlock > span,
 .netPane span,
 .assetStrip span {
@@ -438,6 +444,10 @@
 }
 
 @media (max-width: 980px) {
+  .page {
+    gap: var(--space-4);
+  }
+
   .commandSurface {
     grid-template-columns: 1fr;
   }
@@ -480,6 +490,21 @@
     padding: var(--space-4);
   }
 
+  .goalPane {
+    gap: var(--space-4);
+  }
+
+  .goalPane h1 {
+    margin: var(--space-2) 0;
+    font-size: clamp(1.85rem, 11vw, 2.45rem);
+    line-height: 0.94;
+  }
+
+  .goalMeta {
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+  }
+
   .actionRail {
     grid-template-columns: 1fr;
   }
@@ -489,17 +514,96 @@
     border-block-start: 1px solid var(--color-border);
   }
 
+  .actionRail a {
+    min-height: 48px;
+    justify-content: flex-start;
+  }
+
+  .progressPane,
+  .netPane {
+    gap: var(--space-4);
+  }
+
+  .progressNumber {
+    align-items: baseline;
+  }
+
+  .progressNumber span {
+    font-size: clamp(3.2rem, 18vw, 4.2rem);
+  }
+
+  .progressNumber em {
+    margin-top: 0;
+    font-size: clamp(1.1rem, 6vw, 1.55rem);
+  }
+
+  .progressTrack {
+    height: 14px;
+  }
+
+  .remainingBlock {
+    gap: var(--space-1);
+  }
+
+  .focusStrip,
+  .recommendationGrid,
+  .workbench {
+    gap: var(--space-3);
+  }
+
+  .focusCard,
+  .recommendationCard {
+    padding: var(--space-3);
+  }
+
+  .focusCard strong,
+  .assetStrip strong {
+    font-size: var(--text-lg);
+  }
+
+  .assetStrip div {
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .sectionHead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
   .ledgerRow,
   .pendingMain {
     grid-template-columns: 8px minmax(0, 1fr);
   }
 
+  .ledgerRow {
+    gap: var(--space-2);
+    min-height: 0;
+    padding-block: var(--space-2);
+  }
+
   .rowAmount {
     grid-column: 2;
     justify-items: start;
+    gap: var(--space-1);
+  }
+
+  .pendingRow {
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+  }
+
+  .pendingMain {
+    gap: var(--space-2);
+  }
+
+  .pendingActions {
+    gap: var(--space-2);
   }
 
   .pendingActions > * {
-    flex: 1 1 140px;
+    flex: 1 1 100%;
   }
 }

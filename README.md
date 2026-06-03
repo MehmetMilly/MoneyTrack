@@ -2,6 +2,16 @@
 
 MoneyTrack is a React + TypeScript personal finance app for tracking expenses, planning obligations, setting goals, and managing Firebase-backed money data flows.
 
+## Understand It In 60 Seconds
+
+MoneyTrack gives you a working personal finance app, not a landing page shell. You can review it in two ways:
+
+1. Run `npm install` and `npm run dev`.
+2. Open the login screen.
+3. Click `Explore Demo Workspace` to inspect the signed-in app without Firebase setup.
+
+If you want the real auth and persistence flow, add Firebase web app config to `.env.local` and use email/password or Google sign-in.
+
 ## Why This Exists
 
 MoneyTrack is built as a practical finance tracker and as an open-source portfolio project. The goal is to show real application engineering: authentication, persisted user data, financial entities, clear UX, documentation, and honest project maintenance.
@@ -17,6 +27,13 @@ This is an active prototype, not bank-grade software, financial advice, or a cer
 - Uses Firebase Authentication for email/password and Google sign-in.
 - Stores user-owned data in Cloud Firestore under each signed-in user.
 - Supports SAR-focused formatting. Arabic localization is planned, but currently falls back to English until the translation file is repaired.
+
+## What A Reviewer Can Verify Quickly
+
+- The login screen works without fake hosted-demo claims because the repo includes a read-only local demo workspace.
+- The signed-in product has real route surfaces for dashboard, entries, goals, obligations, insights, and settings.
+- Balance, planner, and reminder flows are backed by typed store logic rather than placeholder JSON rendering.
+- Lint, build, unit tests, and Playwright smoke tests all run locally.
 
 ## Current Feature Status
 
@@ -50,9 +67,25 @@ This is an active prototype, not bank-grade software, financial advice, or a cer
 
 ## Screenshots and Demo
 
-Screenshots should be added after a stable non-sensitive demo account or local seeded demo flow is prepared. This README does not include fake screenshots or a fake live demo link.
+This repository does not claim a fake hosted demo. The intended review path is local:
 
-MoneyTrack now includes a local demo workspace entry point on the login screen so reviewers can inspect the signed-in product without configuring Firebase first. New Firebase users are also bootstrapped with clearly fake starter records from `src/lib/data/demoData.ts` so the dashboard is not empty during review. Do not use real financial data in demo screenshots or issues.
+- Start the app.
+- Use `Explore Demo Workspace` on the login screen.
+- Move through dashboard, insights, obligations, and entries without touching Firebase.
+
+MoneyTrack also bootstraps new Firebase users with clearly fake starter records from `src/lib/data/demoData.ts` so the product is reviewable without real financial data. Do not use real finance screenshots in issues or pull requests.
+
+Desktop login
+
+![MoneyTrack login](docs/screenshots/login-desktop.png)
+
+Desktop dashboard
+
+![MoneyTrack dashboard](docs/screenshots/dashboard-desktop.png)
+
+Desktop insights
+
+![MoneyTrack insights](docs/screenshots/insights-desktop.png)
 
 ## Local Setup
 
