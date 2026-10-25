@@ -111,19 +111,28 @@ async function hydrateGoal(uid: string, goal: Goal) {
 }
 
 export function subscribeGoals(uid: string, callback: (items: Goal[]) => void, onError: (error: Error) => void) {
-  return onSnapshot(
+  let active = true;
+  const unsubscribe = onSnapshot(
     userCollectionRef<Goal>(uid, 'goals'),
     async (snapshot) => {
-      const items = (await Promise.all(
-        snapshot.docs.map(async (entry) => {
-          const data = entry.data() as Goal;
-          return hydrateGoal(uid, { ...data, id: data.id || entry.id });
-        })
-      )).sort((left, right) => left.createdAt.localeCompare(right.createdAt));
-      callback(items);
+      try {
+        const items = (await Promise.all(
+          snapshot.docs.map(async (entry) => {
+            const data = entry.data() as Goal;
+            return hydrateGoal(uid, { ...data, id: data.id || entry.id });
+          })
+        )).sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+        if (active) callback(items);
+      } catch (error) {
+        if (active) onError(error instanceof Error ? error : new Error(String(error)));
+      }
     },
-    (error) => onError(error)
+    (error) => { if (active) onError(error); }
   );
+  return () => {
+    active = false;
+    unsubscribe();
+  };
 }
 
 export async function addGoalContribution(uid: string, goalId: string, payload: NewContributionInput) {
