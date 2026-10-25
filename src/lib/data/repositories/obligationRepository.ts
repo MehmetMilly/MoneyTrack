@@ -202,35 +202,53 @@ function getDebtPaymentEffect(debt: Debt) {
 }
 
 export function subscribeDebts(uid: string, callback: (items: Debt[]) => void, onError: (error: Error) => void) {
-  return onSnapshot(
+  let active = true;
+  const unsubscribe = onSnapshot(
     userCollectionRef<Debt>(uid, 'debts'),
     async (snapshot) => {
-      const items = await Promise.all(
-        snapshot.docs.map(async (entry) => {
-          const data = entry.data() as Debt;
-          return hydrateDebt(uid, { ...data, id: data.id || entry.id });
-        })
-      );
-      callback(items);
+      try {
+        const items = await Promise.all(
+          snapshot.docs.map(async (entry) => {
+            const data = entry.data() as Debt;
+            return hydrateDebt(uid, { ...data, id: data.id || entry.id });
+          })
+        );
+        if (active) callback(items);
+      } catch (error) {
+        if (active) onError(error instanceof Error ? error : new Error(String(error)));
+      }
     },
-    (error) => onError(error)
+    (error) => { if (active) onError(error); }
   );
+  return () => {
+    active = false;
+    unsubscribe();
+  };
 }
 
 export function subscribeInstallments(uid: string, callback: (items: Installment[]) => void, onError: (error: Error) => void) {
-  return onSnapshot(
+  let active = true;
+  const unsubscribe = onSnapshot(
     userCollectionRef<Installment>(uid, 'installments'),
     async (snapshot) => {
-      const items = await Promise.all(
-        snapshot.docs.map(async (entry) => {
-          const data = entry.data() as Installment;
-          return hydrateInstallment(uid, { ...data, id: data.id || entry.id });
-        })
-      );
-      callback(items);
+      try {
+        const items = await Promise.all(
+          snapshot.docs.map(async (entry) => {
+            const data = entry.data() as Installment;
+            return hydrateInstallment(uid, { ...data, id: data.id || entry.id });
+          })
+        );
+        if (active) callback(items);
+      } catch (error) {
+        if (active) onError(error instanceof Error ? error : new Error(String(error)));
+      }
     },
-    (error) => onError(error)
+    (error) => { if (active) onError(error); }
   );
+  return () => {
+    active = false;
+    unsubscribe();
+  };
 }
 
 export function subscribeReminders(uid: string, callback: (items: Reminder[]) => void, onError: (error: Error) => void) {

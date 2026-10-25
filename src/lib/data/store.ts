@@ -254,58 +254,67 @@ function attachOnlineListeners() {
 
 function connectUserData(uid: string) {
   detachDataSubscriptions();
+  const currentVersion = authEventVersion;
+  const isCurrentUser = () =>
+    currentVersion === authEventVersion && useAppStore.getState().currentUserId === uid;
+  const setCurrentUserState = (state: Partial<AppState>) => {
+    if (isCurrentUser()) useAppStore.setState(state);
+  };
+  const reportCurrentUserError = (area: OperationArea, error: Error) => {
+    if (isCurrentUser()) patchError(area, error.message);
+  };
 
   dataSubscriptions = [
     subscribeUser(
       uid,
       ({ profile, settings, lastSyncedAt }) => {
-        useAppStore.setState({
+        setCurrentUserState({
           profile,
           settings,
           lastSyncedAt,
         });
       },
-      (error) => patchError('bootstrap', error.message)
+      (error) => reportCurrentUserError('bootstrap', error)
     ),
     subscribeCategories(
       uid,
-      (categories) => useAppStore.setState({ categories }),
-      (error) => patchError('bootstrap', error.message)
+      (categories) => setCurrentUserState({ categories }),
+      (error) => reportCurrentUserError('bootstrap', error)
     ),
     subscribeAccounts(
       uid,
-      (accounts) => useAppStore.setState({ accounts }),
-      (error) => patchError('accounts', error.message)
+      (accounts) => setCurrentUserState({ accounts }),
+      (error) => reportCurrentUserError('accounts', error)
     ),
     subscribeTransactions(
       uid,
-      (transactions) => useAppStore.setState({ transactions }),
-      (error) => patchError('transactions', error.message)
+      (transactions) => setCurrentUserState({ transactions }),
+      (error) => reportCurrentUserError('transactions', error)
     ),
     subscribePlanningEntries(
       uid,
-      (planningEntries) => useAppStore.setState({ planningEntries }),
-      (error) => patchError('planning', error.message)
+      (planningEntries) => setCurrentUserState({ planningEntries }),
+      (error) => reportCurrentUserError('planning', error)
     ),
     subscribeGoals(
       uid,
-      (goals) => useAppStore.setState({ goals }),
-      (error) => patchError('goals', error.message)
+      (goals) => setCurrentUserState({ goals }),
+      (error) => reportCurrentUserError('goals', error)
     ),
     subscribeDebts(
       uid,
-      (debts) => useAppStore.setState({ debts }),
-      (error) => patchError('obligations', error.message)
+      (debts) => setCurrentUserState({ debts }),
+      (error) => reportCurrentUserError('obligations', error)
     ),
     subscribeInstallments(
       uid,
-      (installments) => useAppStore.setState({ installments }),
-      (error) => patchError('obligations', error.message)
+      (installments) => setCurrentUserState({ installments }),
+      (error) => reportCurrentUserError('obligations', error)
     ),
     subscribeReminders(
       uid,
-      (reminders) => useAppStore.setState({ reminders }),
-      (error) => patchError('obligations', error.message)
+      (reminders) => setCurrentUserState({ reminders }),
+      (error) => reportCurrentUserError('obligations', error)
     ),
   ];
 }
@@ -317,11 +326,23 @@ function initializeAuthStateListener() {
 
   authStateUnsubscribe = observeAuthState(async (user) => {
     const currentVersion = ++authEventVersion;
+    detachDataSubscriptions();
+    useAppStore.setState({
+      profile: EMPTY_PROFILE,
+      lastSyncedAt: null,
+      accounts: [],
+      transactions: [],
+      planningEntries: [],
+      categories: [],
+      debts: [],
+      installments: [],
+      goals: [],
+      reminders: [],
+    });
     patchLoading('bootstrap', true);
     patchError('bootstrap', null);
 
     if (!user) {
-      detachDataSubscriptions();
       if (currentVersion !== authEventVersion) {
         return;
       }
@@ -330,16 +351,6 @@ function initializeAuthStateListener() {
         authStatus: 'unauthenticated',
         isAuthenticated: false,
         currentUserId: null,
-        profile: EMPTY_PROFILE,
-        lastSyncedAt: null,
-        accounts: [],
-        transactions: [],
-        planningEntries: [],
-        categories: [],
-        debts: [],
-        installments: [],
-        goals: [],
-        reminders: [],
       });
       patchLoading('bootstrap', false);
       return;
